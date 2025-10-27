@@ -13,22 +13,8 @@
   </head>
 
   <body>
-    <div class="topBar">
-      <ul class="nav nav-underline">
-        <li class="nav-item">
-          <a class="nav-link" href="index.html">Youtube</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="instagram_converter.html">Instagram</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="tiktok_converter.html">TikTok</a>
-        </li>
-      </ul>
-    </div>
-
     <div id="main_wrapper">
-      <h1 id="page_title">YouTube Converter</h1>
+      <h1 id="page_title">Instagram Converter</h1>
       <div class="container">
         <div id="convert_section" novalidate>
           <input
@@ -37,54 +23,50 @@
             id="yt_url"
             placeholder="Paste YouTube link here..."
           />
-          <select id="youtube_convert_format" class="dropDownMenu">
+          <select id="convert_format" class="dropDownMenu">
             <option value="mp3">MP3</option>
             <option value="mp4">MP4</option>
           </select>
-          <select id="youtube_convert_resolution" class="dropDownMenu">
+          <select id="convert_resolution" class="dropDownMenu">
             <option value="144">144p</option>
             <option value="480">480p</option>
             <option value="720">720p</option>
             <option value="1080">1080p</option>
           </select>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="youtube_submit_button"
-          >
+          <button type="button" class="btn btn-secondary" id="submit_button">
             Convert
           </button>
           <button
             class="btn btn-secondary"
-            id="youtube_download_button"
+            id="download_button"
             type="button"
             hidden
           >
             Download
           </button>
         </div>
-        <p class="text-danger" id="youtube_invalid_link">Invalid link!</p>
+        <p class="text-danger" id="invalid_link">Invalid link!</p>
       </div>
-      <div id="youtube_convert_result">Done!</div>
+      <div id="convert_result">Done!</div>
 
       <div class="bottomBar">
         <ul class="nav nav-underline">
           <li class="nav-item">
-            <a class="nav-link" href="#" id="youtube_stats_link">Stats</a>
+            <a class="nav-link" href="#" id="stats_link">Stats</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#" id="youtube_logs_link">Logs</a>
+            <a class="nav-link" href="#" id="logs_link">Logs</a>
           </li>
         </ul>
       </div>
     </div>
 
-    <div id="youtube_toast_container" hidden>
+    <div id="toast_container" hidden>
       <div class="toast_content">
-        <h5 class="text-body" id="youtube_toast_title">Toast title</h5>
-        <div class="text-secondary" id="youtube_toast_body">Toast message</div>
+        <h5 class="text-body" id="toast_title">Toast title</h5>
+        <div class="text-secondary" id="toast_body">Toast message</div>
       </div>
-      <i class="fa-solid fa-xmark" id="youtube_x_mark"></i>
+      <i class="fa-solid fa-xmark" id="x_mark"></i>
     </div>
 
     <script type="text/javascript" src="script.js"></script>

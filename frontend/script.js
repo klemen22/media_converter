@@ -2,19 +2,19 @@
 //                                  DOM Elements                                     //
 //-----------------------------------------------------------------------------------//
 
-const logsLink = document.getElementById("logs_link");
-const statsLink = document.getElementById("stats_link");
-const toastContainer = document.getElementById("toast_container");
-const toastTitle = document.getElementById("toast_title");
-const toastBody = document.getElementById("toast_body");
-const xMark = document.getElementById("x_mark");
-const formatSelect = document.getElementById("convert_format");
-const resolutionSelect = document.getElementById("convert_resolution");
-const results = document.getElementById("convert_result");
-const submitButton = document.getElementById("submit_button");
-const downloadButton = document.getElementById("download_button");
+const logsLink = document.getElementById("youtube_logs_link");
+const statsLink = document.getElementById("youtube_stats_link");
+const toastContainer = document.getElementById("youtube_toast_container");
+const toastTitle = document.getElementById("youtube_toast_title");
+const toastBody = document.getElementById("youtube_toast_body");
+const xMark = document.getElementById("youtube_x_mark");
+const formatSelect = document.getElementById("youtube_convert_format");
+const resolutionSelect = document.getElementById("youtube_convert_resolution");
+const results = document.getElementById("youtube_convert_result");
+const submitButton = document.getElementById("youtube_submit_button");
+const downloadButton = document.getElementById("youtube_download_button");
 const ytURL = document.getElementById("yt_url");
-const invalidLinkFeedback = document.getElementById("invalid_link");
+const invalidLinkFeedback = document.getElementById("youtube_invalid_link");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
 let downloadUrl = null;
 let filename = null;
@@ -218,6 +218,7 @@ async function downloadLogs() {
 //-----------------------------------------------------------------------------------//
 //                                      Toast                                        //
 //-----------------------------------------------------------------------------------//
+//TODO: FIX TOAST
 
 async function showStatsToast() {
   try {
