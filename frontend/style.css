@@ -57,7 +57,7 @@ body {
   margin-top: 5px;
 }
 
-#toast_container {
+#youtube_toast_container {
   position: fixed;
   background-color: #444;
   top: 20px;
@@ -70,12 +70,12 @@ body {
   box-shadow: 0 0 6px #ffffffbf;
 }
 
-.toast_content {
+.youtube_toast_content {
   padding: 10px;
   width: 400px;
 }
 
-#x_mark {
+#youtube_x_mark {
   padding: 4px;
   cursor: pointer;
   color: #fff;

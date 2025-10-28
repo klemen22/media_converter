@@ -218,7 +218,6 @@ async function downloadLogs() {
 //-----------------------------------------------------------------------------------//
 //                                      Toast                                        //
 //-----------------------------------------------------------------------------------//
-//TODO: FIX TOAST
 
 async function showStatsToast() {
   try {
@@ -248,6 +247,11 @@ async function showStatsToast() {
 }
 
 function showToast() {
+  console.log("Toast");
+  if (!toastContainer) {
+    console.error("Toast container not found!");
+    return;
+  }
   toastContainer.hidden = false;
   toastContainer.classList.remove("fade-out");
   toastContainer.classList.add("slide-in");

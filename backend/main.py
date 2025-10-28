@@ -2,7 +2,7 @@
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
@@ -14,6 +14,7 @@ import time
 import hashlib
 import random
 from database import initializeDB, saveConversion, getLogs, getStats
+import instaloader
 
 initializeDB()
 app = FastAPI()
@@ -25,9 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# download dir for youtube
 downloadDir = "downloads"
 if os.path.exists(downloadDir) == False:
-    os.mkdir(downloadDir, exist_ok=True)
+    os.mkdir(downloadDir)
+
+# download dir for instagram
+downloadDirInsta = "downloads_instagram"
+if os.path.exists(downloadDirInsta) == False:
+    os.mkdir(downloadDirInsta)
 
 
 class request(BaseModel):
@@ -39,6 +46,7 @@ class request(BaseModel):
 # -------------------------------------------------------------------------------------------#
 #                                     API calls - Youtube                                    #
 # -------------------------------------------------------------------------------------------#
+# TODO: changes "status" into actual HTTP status codes
 
 
 @app.post("/api/convert")
@@ -157,6 +165,45 @@ def downloadStats():
 # -------------------------------------------------------------------------------------------#
 #                                   API calls - Instagram                                    #
 # -------------------------------------------------------------------------------------------#
+
+
+class InstagramRequest(BaseModel):
+    url: str
+    type: str
+
+
+@app.post("/api/instagram/video/convert")
+async def convertInstagramVideo(payload: InstagramRequest):
+    print("Payload:", payload)
+
+    contentID = "instagram_video_" + generateHash()
+
+    loader = instaloader.Instaloader(
+        filename_pattern=contentID,
+        download_comments=False,
+        download_geotags=False,
+        download_pictures=False,
+        download_video_thumbnails=False,
+        download_videos=True,
+        save_metadata=False,
+        post_metadata_txt_pattern="",
+    )
+
+    contentURL = payload.url
+    shortCode = contentURL.split("/")[-2]
+
+    try:
+        post = instaloader.Post.from_shortcode(
+            context=loader.context, shortcode=shortCode
+        )
+        loader.download_post(post=post, target=downloadDirInsta)
+        return {
+            "status": "success",
+            "message": "Download complete",
+            "filename": contentID,
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 # -------------------------------------------------------------------------------------------#
