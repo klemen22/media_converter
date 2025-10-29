@@ -172,35 +172,120 @@ class InstagramRequest(BaseModel):
     type: str
 
 
-@app.post("/api/instagram/video/convert")
-async def convertInstagramVideo(payload: InstagramRequest):
+class InstagramFilesRequest(BaseModel):
+    filenames: list[str]
+
+
+@app.post("/api/instagram/convert")
+async def convertInstagramContent(payload: InstagramRequest):
     print("Payload:", payload)
 
-    contentID = "instagram_video_" + generateHash()
-
-    loader = instaloader.Instaloader(
-        filename_pattern=contentID,
-        download_comments=False,
-        download_geotags=False,
-        download_pictures=False,
-        download_video_thumbnails=False,
-        download_videos=True,
-        save_metadata=False,
-        post_metadata_txt_pattern="",
-    )
+    if payload.type == "video":
+        loader = instaloader.Instaloader(
+            download_comments=False,
+            download_geotags=False,
+            download_pictures=False,
+            download_video_thumbnails=False,
+            download_videos=True,
+            save_metadata=False,
+            post_metadata_txt_pattern="",
+        )
+    elif payload.type == "picture":
+        loader = instaloader.Instaloader(
+            download_comments=False,
+            download_geotags=False,
+            download_pictures=True,
+            download_video_thumbnails=False,
+            download_videos=False,
+            save_metadata=False,
+            post_metadata_txt_pattern="",
+        )
+    else:
+        return {"status": "error", "message": "invalid content type"}
 
     contentURL = payload.url
     shortCode = contentURL.split("/")[-2]
+    fileNames = []
 
     try:
         post = instaloader.Post.from_shortcode(
             context=loader.context, shortcode=shortCode
         )
-        loader.download_post(post=post, target=downloadDirInsta)
+
+        if post.typename == "GraphSidecar":
+            for index, node in enumerate(post.get_sidecar_nodes(), start=1):
+                if payload.type == "video":
+                    fileExt = ".mp4"
+                    contentID = f"instagram_video_{index}_{generateHash()}"
+                    fileURL = node.video_url
+                else:
+                    fileExt = ".jpg"
+                    contentID = f"instagram_picture_{index}_{generateHash()}"
+                    fileURL = node.display_url
+
+                filePath = os.path.join(downloadDirInsta, contentID)
+                loader.download_pic(
+                    filename=filePath, url=fileURL, mtime=post.date_local
+                )
+                fileNames.append(contentID + fileExt)
+        else:
+            if payload.type == "video":
+                fileExt = ".mp4"
+                contentID = f"instagram_video_{generateHash()}"
+                fileURL = post.video_url
+
+            else:
+                fileExt = ".jpg"
+                contentID = f"instagram_picture_{generateHash()}"
+                fileURL = post.url
+
+            filePath = os.path.join(downloadDirInsta, contentID)
+            loader.download_pic(filename=filePath, url=fileURL, mtime=post.date_local)
+            fileNames.append(contentID + fileExt)
+
         return {
             "status": "success",
-            "message": "Download complete",
-            "filename": contentID,
+            "message": "download complete",
+            "filenames": fileNames,
+            "num": len(fileNames),
+        }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# TODO: fix download API call for multiple files request (for reference look at delete API call), also pack more files into a zip file or something
+@app.get("/api/instagram/download/{filename}")
+def downloadInstagramContent(filename: str):
+    filePath = os.path.join(downloadDirInsta, filename)
+
+    if os.path.exists(filePath):
+        return FileResponse(
+            path=filePath, filename=filename, media_type="application/octet-stream"
+        )
+    else:
+        return {"status": "error", "message": "File not found"}
+
+
+@app.delete("/api/instagram/delete")
+async def deleteInstagramContent(request: InstagramFilesRequest):
+    deletedFiles = []
+    lostFiles = []
+    try:
+        for filename in request.filenames:
+            filePath = os.path.join(downloadDirInsta, filename)
+
+            if os.path.exists(filePath):
+                os.remove(filePath)
+                deletedFiles.append(filename)
+            else:
+                lostFiles.append(filename)
+
+        return {
+            "status": "success",
+            "message": "delete complete",
+            "deleted files": deletedFiles,
+            "lost files": lostFiles,
         }
     except Exception as e:
         return {"status": "error", "message": str(e)}
