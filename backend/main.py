@@ -15,6 +15,7 @@ import hashlib
 import random
 from database import initializeDB, saveConversion, getLogs, getStats
 import instaloader
+import shutil
 
 initializeDB()
 app = FastAPI()
@@ -254,39 +255,61 @@ async def convertInstagramContent(payload: InstagramRequest):
         return {"status": "error", "message": str(e)}
 
 
-# TODO: fix download API call for multiple files request (for reference look at delete API call), also pack more files into a zip file or something
-@app.get("/api/instagram/download/{filename}")
-def downloadInstagramContent(filename: str):
-    filePath = os.path.join(downloadDirInsta, filename)
-
-    if os.path.exists(filePath):
-        return FileResponse(
-            path=filePath, filename=filename, media_type="application/octet-stream"
-        )
-    else:
-        return {"status": "error", "message": "File not found"}
-
-
-@app.delete("/api/instagram/delete")
-async def deleteInstagramContent(request: InstagramFilesRequest):
-    deletedFiles = []
-    lostFiles = []
+@app.get("/api/instagram/download")
+async def downloadInstagramContent(request: InstagramFilesRequest):
     try:
-        for filename in request.filenames:
-            filePath = os.path.join(downloadDirInsta, filename)
+        if len(request.filenames) > 1:
+            archiveHash = generateHash()
+            archivePath = os.path.join(
+                downloadDirInsta, f"instagram_content_{archiveHash}"
+            )
+            os.makedirs(archivePath, exist_ok=True)
+            archiveName = f"instagram_{archiveHash}.zip"
+            archiveFullPath = os.path.join(downloadDirInsta, archiveName)
+            for fileName in request.filenames:
+                filePath = os.path.join(downloadDirInsta, fileName)
+                if os.path.exists(filePath):
+                    shutil.move(filePath, os.path.join(archivePath, fileName))
+
+            shutil.make_archive(
+                base_name=os.path.splitext(archiveFullPath)[0],
+                format="zip",
+                root_dir=archivePath,
+            )
+
+            shutil.rmtree(archivePath)
+
+            return FileResponse(
+                path=archiveFullPath,
+                filename=archiveName,
+                media_type="application/zip",
+            )
+        else:
+            filePath = os.path.join(downloadDirInsta, request.filenames[0])
 
             if os.path.exists(filePath):
-                os.remove(filePath)
-                deletedFiles.append(filename)
+                return FileResponse(
+                    path=filePath,
+                    filename=request.filenames[0],
+                    media_type="application/octet-stream",
+                )
             else:
-                lostFiles.append(filename)
+                return {"status": "error", "message": "not found"}
 
-        return {
-            "status": "success",
-            "message": "delete complete",
-            "deleted files": deletedFiles,
-            "lost files": lostFiles,
-        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.delete("/api/instagram/delete/{filename}")
+async def deleteInstagramContent(filename: str):
+    filePath = os.path.join(downloadDirInsta, filename)
+    try:
+        if os.path.exists(filePath):
+            os.remove(filePath)
+            return {"status": "deleted"}
+        else:
+            return {"status": "not found"}
+
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
