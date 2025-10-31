@@ -44,6 +44,8 @@ downloadDirTikTok = "downloads_tiktok"
 if os.path.exists(downloadDirTikTok) == False:
     os.mkdir(downloadDirTikTok)
 
+downloadDirs = ["downloads", "downloads_instagram", "downloads_tiktok"]
+
 
 class request(BaseModel):
     url: str
@@ -393,26 +395,32 @@ async def deleteTiktokContent(request: tiktokDownloadRequest):
 # -------------------------------------------------------------------------------------------#
 #                                    Garbage collector                                       #
 # -------------------------------------------------------------------------------------------#
+# on set interval delete all files / leftovers in downloads folder
 
 
 def deleteGarbage():
-    # on set interval delete all files / leftovers in downloads folder
-
     while True:
         startInt = time.time()
         endInt = startInt - 30 * 60
 
-        filesList = os.listdir(downloadDir)
+        for downloadDir in downloadDirs:
+            if not os.path.exists(downloadDir):
+                continue
 
-        for file in filesList:
-            filePath = os.path.join(downloadDir, file)
-            if os.path.isfile(filePath):
-                if os.path.getatime(filePath) < endInt:
-                    try:
-                        os.remove(filePath)
-                        print(f"Deleted old file: {file}")
-                    except Exception as e:
-                        print(f"Error deleting {file}: {e}")
+            filesList = os.listdir(downloadDir)
+
+            for file in filesList:
+                if file == ".gitkeep":
+                    continue
+
+                filePath = os.path.join(downloadDir, file)
+                if os.path.isfile(filePath):
+                    if os.path.getatime(filePath) < endInt:
+                        try:
+                            os.remove(filePath)
+                            print(f"Deleted old file: {filePath}")
+                        except Exception as e:
+                            print(f"Error deleting {filePath}: {e}")
 
         time.sleep(600)
 
