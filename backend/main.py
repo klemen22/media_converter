@@ -1,3 +1,5 @@
+# TODO: Fix garbage collector, Fix / change formating of api requests for youtube videos
+
 # -------------------------------------------------------------------------------------------#
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
@@ -37,6 +39,11 @@ downloadDirInsta = "downloads_instagram"
 if os.path.exists(downloadDirInsta) == False:
     os.mkdir(downloadDirInsta)
 
+# download dir for tiktok
+downloadDirTikTok = "downloads_tiktok"
+if os.path.exists(downloadDirTikTok) == False:
+    os.mkdir(downloadDirTikTok)
+
 
 class request(BaseModel):
     url: str
@@ -52,7 +59,6 @@ class request(BaseModel):
 
 @app.post("/api/convert")
 async def convertVideo(payload: request):
-    print("Payload retrieved!", payload)
 
     uniqueHash = generateHash()
     ydl_opts = {}
@@ -300,16 +306,86 @@ async def downloadInstagramContent(request: InstagramFilesRequest):
         return {"status": "error", "message": str(e)}
 
 
-@app.delete("/api/instagram/delete/{filename}")
-async def deleteInstagramContent(filename: str):
-    filePath = os.path.join(downloadDirInsta, filename)
+@app.delete("/api/instagram/delete")
+async def deleteInstagramContent(request: InstagramFilesRequest):
+    filePath = os.path.join(downloadDirInsta, request.filenames[0])
+
     try:
         if os.path.exists(filePath):
             os.remove(filePath)
             return {"status": "deleted"}
         else:
-            return {"status": "not found"}
+            return {"status": "error", "message": "not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
+
+# -------------------------------------------------------------------------------------------#
+#                                   API calls - TikTok                                       #
+# -------------------------------------------------------------------------------------------#
+class tiktokConvertRequest(BaseModel):
+    url: str
+
+
+class tiktokDownloadRequest(BaseModel):
+    filename: str
+
+
+@app.post("/api/tiktok/convert")
+async def convertTiktokContent(payload: tiktokConvertRequest):
+    filePath = os.path.join(
+        downloadDirTikTok, "%(title)s_" + generateHash() + ".%(ext)s"
+    )
+
+    ydl_opts = {
+        "outtmpl": filePath,
+        "format": "mp4",
+        "noplaylist": True,
+    }
+
+    try:
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(payload.url, download=True)
+            filename = ydl.prepare_filename(info)
+            cleanName = os.path.basename(filename)
+
+            saveConversion(title=cleanName, format=".mp4")
+
+            return {
+                "status": "success",
+                "message": "Download complete",
+                "filename": cleanName,
+            }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/tiktok/download")
+def downloadkTikTokContent(request: tiktokDownloadRequest):
+    filePath = os.path.join(downloadDirTikTok, request.filename)
+
+    print(filePath)
+
+    if os.path.exists(filePath):
+        return FileResponse(
+            path=filePath,
+            filename=request.filename,
+            media_type="application/octet-stream",
+        )
+    else:
+        return {"status": "error", "message": "File not found"}
+
+
+@app.delete("/api/tiktok/delete")
+async def deleteTiktokContent(request: tiktokDownloadRequest):
+    filePath = os.path.join(downloadDirTikTok, request.filename)
+
+    try:
+        if os.path.exists(filePath):
+            os.remove(filePath)
+            return {"status": "deleted"}
+        else:
+            return {"status": "error", "message": "File not found"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
