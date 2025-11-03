@@ -1,4 +1,6 @@
-# TODO: Fix garbage collector, Fix / change formating of api requests for youtube videos
+# TODO: Fix / change formating of api requests for youtube videos
+# TODO: Add database for instagram and tiktok logs
+# TODO: creater or add seperate login function
 
 # -------------------------------------------------------------------------------------------#
 #                                         Imports                                            #
@@ -10,7 +12,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
 from fastapi.responses import FileResponse
 import os
-import re
 import threading
 import time
 import hashlib
@@ -18,6 +19,7 @@ import random
 from database import initializeDB, saveConversion, getLogs, getStats
 import instaloader
 import shutil
+import asyncio
 
 initializeDB()
 app = FastAPI()
@@ -47,20 +49,23 @@ if os.path.exists(downloadDirTikTok) == False:
 downloadDirs = ["downloads", "downloads_instagram", "downloads_tiktok"]
 
 
-class request(BaseModel):
+# -------------------------------------------------------------------------------------------#
+#                                     API calls - Youtube                                    #
+# -------------------------------------------------------------------------------------------#
+
+
+class youtubeConvert(BaseModel):
     url: str
     format: str
     resolution: str | None = None
 
 
-# -------------------------------------------------------------------------------------------#
-#                                     API calls - Youtube                                    #
-# -------------------------------------------------------------------------------------------#
-# TODO: changes "status" into actual HTTP status codes
+class youtubeContentRequest(BaseModel):
+    filename: str
 
 
-@app.post("/api/convert")
-async def convertVideo(payload: request):
+@app.post("/api/youtube/convert")
+async def convertVideo(payload: youtubeConvert):
 
     uniqueHash = generateHash()
     ydl_opts = {}
@@ -118,20 +123,22 @@ async def convertVideo(payload: request):
         return {"status": "error", "message": str(e)}
 
 
-@app.get("/api/download/{filename}")
-def downloadFile(filename: str):
-    filePath = os.path.join(downloadDir, filename)
+@app.post("/api/youtube/download")
+def downloadFile(payload: youtubeContentRequest):
+    filePath = os.path.join(downloadDir, payload.filename)
     if os.path.exists(filePath):
         return FileResponse(
-            path=filePath, filename=filename, media_type="application/octet-stream"
+            path=filePath,
+            filename=payload.filename,
+            media_type="application/octet-stream",
         )
     else:
         return {"status": "error", "message": "File not found"}
 
 
-@app.delete("/api/delete/{filename}")
-async def deleteFile(filename: str):
-    filePath = os.path.join(downloadDir, filename)
+@app.delete("/api/youtube/delete")
+async def deleteFile(payload: youtubeContentRequest):
+    filePath = os.path.join(downloadDir, payload.filename)
     try:
         if os.path.exists(filePath):
             os.remove(filePath)
@@ -142,7 +149,7 @@ async def deleteFile(filename: str):
         return {"status": "error", "message": str(e)}
 
 
-@app.get("/api/logs")
+@app.get("/api/youtube/logs")
 def downloadLogs():
     try:
         logs = getLogs()
@@ -157,7 +164,7 @@ def downloadLogs():
         return {"status": "error", "message": str(e)}
 
 
-@app.get("/api/stats")
+@app.get("/api/youtube/stats")
 def downloadStats():
     try:
         stats = getStats()
@@ -182,7 +189,7 @@ class InstagramRequest(BaseModel):
 
 
 class InstagramFilesRequest(BaseModel):
-    filenames: list[str]
+    filename: str
 
 
 @app.post("/api/instagram/convert")
@@ -242,7 +249,6 @@ async def convertInstagramContent(payload: InstagramRequest):
                 fileExt = ".mp4"
                 contentID = f"instagram_video_{generateHash()}"
                 fileURL = post.video_url
-
             else:
                 fileExt = ".jpg"
                 contentID = f"instagram_picture_{generateHash()}"
@@ -252,21 +258,7 @@ async def convertInstagramContent(payload: InstagramRequest):
             loader.download_pic(filename=filePath, url=fileURL, mtime=post.date_local)
             fileNames.append(contentID + fileExt)
 
-        return {
-            "status": "success",
-            "message": "download complete",
-            "filenames": fileNames,
-            "num": len(fileNames),
-        }
-
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
-@app.get("/api/instagram/download")
-async def downloadInstagramContent(request: InstagramFilesRequest):
-    try:
-        if len(request.filenames) > 1:
+        if len(fileNames) > 1:
             archiveHash = generateHash()
             archivePath = os.path.join(
                 downloadDirInsta, f"instagram_content_{archiveHash}"
@@ -274,10 +266,11 @@ async def downloadInstagramContent(request: InstagramFilesRequest):
             os.makedirs(archivePath, exist_ok=True)
             archiveName = f"instagram_{archiveHash}.zip"
             archiveFullPath = os.path.join(downloadDirInsta, archiveName)
-            for fileName in request.filenames:
-                filePath = os.path.join(downloadDirInsta, fileName)
-                if os.path.exists(filePath):
-                    shutil.move(filePath, os.path.join(archivePath, fileName))
+            for fileName in fileNames:
+                shutil.move(
+                    os.path.join(downloadDirInsta, fileName),
+                    os.path.join(archivePath, fileName),
+                )
 
             shutil.make_archive(
                 base_name=os.path.splitext(archiveFullPath)[0],
@@ -287,31 +280,42 @@ async def downloadInstagramContent(request: InstagramFilesRequest):
 
             shutil.rmtree(archivePath)
 
-            return FileResponse(
-                path=archiveFullPath,
-                filename=archiveName,
-                media_type="application/zip",
-            )
-        else:
-            filePath = os.path.join(downloadDirInsta, request.filenames[0])
+            return {
+                "status": "success",
+                "message": "download complete",
+                "filename": archiveName,
+            }
 
-            if os.path.exists(filePath):
-                return FileResponse(
-                    path=filePath,
-                    filename=request.filenames[0],
-                    media_type="application/octet-stream",
-                )
-            else:
-                return {"status": "error", "message": "not found"}
+        else:
+            return {
+                "status": "success",
+                "message": "download complete",
+                "filename": fileNames[0],
+            }
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
 
-@app.delete("/api/instagram/delete")
-async def deleteInstagramContent(request: InstagramFilesRequest):
-    filePath = os.path.join(downloadDirInsta, request.filenames[0])
+@app.post("/api/instagram/download")
+async def downloadInstagramContent(payload: InstagramFilesRequest):
+    filePath = os.path.join(downloadDirInsta, payload.filename)
+    if os.path.exists(filePath):
+        media_type = (
+            "application/zip"
+            if filePath.endswith(".zip")
+            else "application/octet-stream"
+        )
+        return FileResponse(
+            path=filePath, filename=payload.filename, media_type=media_type
+        )
+    else:
+        return {"status": "error", "message": "not found"}
 
+
+@app.delete("/api/instagram/delete")
+async def deleteInstagramContent(payload: InstagramFilesRequest):
+    filePath = os.path.join(downloadDirInsta, payload.filename)
     try:
         if os.path.exists(filePath):
             os.remove(filePath)

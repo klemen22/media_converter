@@ -2,46 +2,40 @@
 //                                  DOM Elements                                     //
 //-----------------------------------------------------------------------------------//
 
-const logsLink = document.getElementById("youtube_logs_link");
-const statsLink = document.getElementById("youtube_stats_link");
-const toastContainer = document.getElementById("youtube_toast_container");
-const toastTitle = document.getElementById("youtube_toast_title");
-const toastBody = document.getElementById("youtube_toast_body");
-const xMark = document.getElementById("youtube_x_mark");
-const formatSelect = document.getElementById("youtube_convert_format");
-const resolutionSelect = document.getElementById("youtube_convert_resolution");
-const results = document.getElementById("youtube_convert_result");
-const submitButton = document.getElementById("youtube_submit_button");
-const downloadButton = document.getElementById("youtube_download_button");
-const ytURL = document.getElementById("yt_url");
-const invalidLinkFeedback = document.getElementById("youtube_invalid_link");
+//const logsLink = document.getElementById("instagram_logs_link");
+const statsLink = document.getElementById("instagram_stats_link");
+const toastContainer = document.getElementById("instagram_toast_container");
+const toastTitle = document.getElementById("instagram_toast_title");
+const toastBody = document.getElementById("instagram_toast_body");
+const xMark = document.getElementById("instagram_x_mark");
+const typeSelect = document.getElementById("instagram_convert_type");
+const results = document.getElementById("instagram_convert_result");
+const submitButton = document.getElementById("instagram_submit_button");
+const downloadButton = document.getElementById("instagram_download_button");
+const instaURL = document.getElementById("instagram_url");
+const invalidLinkFeedback = document.getElementById("instagram_invalid_link");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
 let downloadUrl = null;
 let filename = null;
 
 document.addEventListener("DOMContentLoaded", () => {
-  formatSelect.value = "mp3";
-  resolutionSelect.hidden = true;
+  typeSelect.value = "picture";
   invalidLinkFeedback.hidden = true;
   downloadButton.hidden = true;
   submitButton.hidden = false;
   submitButton.disabled = false;
   downloadButton.disabled = false;
   results.hidden = true;
-  logsLink.disabled = false;
+  //logsLink.disabled = false;
   toastContainer.classList.remove("slide-in");
   toastContainer.classList.remove("fade-out");
 
-  if (ytURL.classList.contains("is-invalid")) {
-    ytURL.classList.remove("is-invalid");
+  if (instaURL.classList.contains("is-invalid")) {
+    instaURL.classList.remove("is-invalid");
     invalidLinkFeedback.hidden = true;
   }
 
-  formatSelect.addEventListener("change", () => {
-    resolutionSelect.hidden = formatSelect.value !== "mp4";
-  });
-
-  logsLink.addEventListener("click", downloadLogs);
+  //logsLink.addEventListener("click", downloadLogs);
   statsLink.addEventListener("click", (e) => {
     e.preventDefault();
     showStatsToast();
@@ -50,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
   xMark.addEventListener("click", hideToast);
 
   submitButton.addEventListener("click", async (event) => {
+    console.log("Download");
     event.preventDefault();
     event.stopPropagation();
     submitRequest();
@@ -67,37 +62,31 @@ async function submitRequest() {
     filename = null;
   }
 
-  const url = ytURL.value.trim();
-  const format = formatSelect.value;
+  const url = instaURL.value.trim();
+  const type = typeSelect.value;
 
-  if (!url.includes("https://www.youtube.com/")) {
-    ytURL.classList.add("is-invalid");
+  if (!url.includes("https://www.instagram.com/")) {
+    instaURL.classList.add("is-invalid");
     invalidLinkFeedback.hidden = false;
     return;
   }
 
-  ytURL.classList.remove("is-invalid");
+  instaURL.classList.remove("is-invalid");
   invalidLinkFeedback.hidden = true;
   submitButton.disabled = true;
-  resolutionSelect.disabled = true;
-  formatSelect.disabled = true;
+  typeSelect.disabled = true;
 
   const payload = {
     url: url,
-    format: format,
-    resolution: null,
+    type: type,
   };
-
-  if (format == "mp4") {
-    payload.resolution = resolutionSelect.value;
-  }
 
   console.log(payload);
   results.hidden = false;
   results.textContent = "Converting...";
 
   try {
-    const response = await fetch(`${baseURL}/api/youtube/convert`, {
+    const response = await fetch(`${baseURL}/api/instagram/convert`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -137,19 +126,15 @@ async function submitRequest() {
 //-----------------------------------------------------------------------------------//
 
 async function downloadRequest(data) {
-  const downloadLink = `${baseURL}/api/youtube/download`;
+  const downloadLink = `${baseURL}/api/instagram/download`;
   downloadButton.disabled = true;
   results.textContent = "Downloading...";
-
   try {
     const response = await fetch(downloadLink, {
       method: "POST",
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        Pragma: "no-cache",
-        Expires: "0",
       },
       body: JSON.stringify({ filename: data.filename }),
     });
@@ -159,6 +144,7 @@ async function downloadRequest(data) {
       downloadButton.disabled = false;
       return;
     }
+
     const blob = await response.blob();
     const objectURL = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -176,11 +162,10 @@ async function downloadRequest(data) {
     submitButton.hidden = false;
     downloadButton.disabled = false;
     downloadButton.hidden = true;
-    resolutionSelect.disabled = false;
-    formatSelect.disabled = false;
+    typeSelect.disabled = false;
 
     // send signal to backend to delete the file
-    await fetch(`${baseURL}/api/youtube/delete`, {
+    await fetch(`${baseURL}/api/instagram/delete`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -200,8 +185,9 @@ async function downloadRequest(data) {
 //-----------------------------------------------------------------------------------//
 
 async function downloadLogs() {
+  /* DATABASE NOT IMPLEMENTED YET
   logsLink.disabled = true;
-  const resposne = await fetch(`${baseURL}/api/youtube/logs`);
+  const resposne = await fetch(`${baseURL}/api/instagram/logs`);
   const blob = await resposne.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -214,7 +200,7 @@ async function downloadLogs() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  await fetch(`${baseURL}/api/youtube/delete`, {
+  await fetch(`${baseURL}/api/instagram/delete`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
@@ -222,6 +208,7 @@ async function downloadLogs() {
     body: JSON.stringify({ filename: "logs.txt" }),
   });
   logsLink.disabled = false;
+  */
 }
 
 //-----------------------------------------------------------------------------------//
@@ -229,8 +216,9 @@ async function downloadLogs() {
 //-----------------------------------------------------------------------------------//
 
 async function showStatsToast() {
+  /* DATABASE NOT IMPLEMENTED YET
   try {
-    const response = await fetch(`${baseURL}/api/youtube/stats`);
+    const response = await fetch(`${baseURL}/api/instagram/stats`);
     if (response.ok == false) {
       throw new Error("Error while fetching server stats!");
     }
@@ -253,6 +241,7 @@ async function showStatsToast() {
       hideToast();
     }, 5000);
   }
+  */
 }
 
 function showToast() {
