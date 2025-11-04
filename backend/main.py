@@ -16,7 +16,14 @@ import threading
 import time
 import hashlib
 import random
-from database import initializeDB, saveConversion, getLogs, getStats
+from database import (
+    initializeDB,
+    saveConversion,
+    getLogs,
+    getStats,
+    saveInstaConversion,
+    saveTiktokConversion,
+)
 import instaloader
 import shutil
 import asyncio
@@ -215,6 +222,10 @@ async def convertInstagramContent(payload: InstagramRequest):
                     filename=filePath, url=fileURL, mtime=post.date_local
                 )
                 fileNames.append(contentID + fileExt)
+                if fileExt == ".mp4":
+                    saveInstaConversion(title=contentID, type="video")
+                else:
+                    saveInstaConversion(title=contentID, type="picture")
         else:
             if payload.type == "video":
                 fileExt = ".mp4"
@@ -228,6 +239,10 @@ async def convertInstagramContent(payload: InstagramRequest):
             filePath = os.path.join(downloadDirInsta, contentID)
             loader.download_pic(filename=filePath, url=fileURL, mtime=post.date_local)
             fileNames.append(contentID + fileExt)
+            if fileExt == ".mp4":
+                saveInstaConversion(title=contentID, type="video")
+            else:
+                saveInstaConversion(title=contentID, type="picture")
 
         if len(fileNames) > 1:
             archiveHash = generateHash()
@@ -250,7 +265,6 @@ async def convertInstagramContent(payload: InstagramRequest):
             )
 
             shutil.rmtree(archivePath)
-
             return {
                 "status": "success",
                 "message": "download complete",
@@ -326,7 +340,7 @@ async def convertTiktokContent(payload: tiktokConvertRequest):
             filename = ydl.prepare_filename(info)
             cleanName = os.path.basename(filename)
 
-            saveConversion(title=cleanName, format=".mp4")
+            saveTiktokConversion(title=cleanName)
 
             return {
                 "status": "success",

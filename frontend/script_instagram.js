@@ -233,8 +233,8 @@ async function showStatsToast() {
     toastTitle.textContent = "Page stats";
     toastBody.innerHTML = `
       Total conversions: ${stats.total_conversions}
-      &nbsp;&nbsp;&nbsp;&nbsp;MP3: ${stats.number_of_video}
-      &nbsp;&nbsp;&nbsp;&nbsp;MP4: ${stats.number_of_picture}`;
+      &nbsp;&nbsp;&nbsp;&nbsp;Videos: ${stats.number_of_video}
+      &nbsp;&nbsp;&nbsp;&nbsp;Pictures: ${stats.number_of_picture}`;
     showToast();
     setTimeout(() => {
       hideToast();
