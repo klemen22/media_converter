@@ -201,13 +201,20 @@ async function downloadRequest(data) {
 
 async function downloadLogs() {
   logsLink.disabled = true;
-  const resposne = await fetch(`${baseURL}/api/youtube/logs`);
+  const resposne = await fetch(`${baseURL}/api/logs`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ table: "youtube" }),
+  });
   const blob = await resposne.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
 
   a.href = url;
-  a.download = "logs.txt";
+  a.download = "youtube_logs.txt";
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
@@ -219,7 +226,7 @@ async function downloadLogs() {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ filename: "logs.txt" }),
+    body: JSON.stringify({ filename: "youtube_logs.txt" }),
   });
   logsLink.disabled = false;
 }
@@ -230,7 +237,13 @@ async function downloadLogs() {
 
 async function showStatsToast() {
   try {
-    const response = await fetch(`${baseURL}/api/youtube/stats`);
+    const response = await fetch(`${baseURL}/api/stats`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ table: "youtube" }),
+    });
     if (response.ok == false) {
       throw new Error("Error while fetching server stats!");
     }

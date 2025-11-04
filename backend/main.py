@@ -32,7 +32,7 @@ app.add_middleware(
 )
 
 # download dir for youtube
-downloadDir = "downloads"
+downloadDir = "downloads_youtube"
 if os.path.exists(downloadDir) == False:
     os.mkdir(downloadDir)
 
@@ -46,7 +46,7 @@ downloadDirTikTok = "downloads_tiktok"
 if os.path.exists(downloadDirTikTok) == False:
     os.mkdir(downloadDirTikTok)
 
-downloadDirs = ["downloads", "downloads_instagram", "downloads_tiktok"]
+downloadDirs = ["downloads_youtube", "downloads_instagram", "downloads_tiktok"]
 
 
 # -------------------------------------------------------------------------------------------#
@@ -145,35 +145,6 @@ async def deleteFile(payload: youtubeContentRequest):
             return {"status": "deleted"}
         else:
             return {"status": "not found"}
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
-@app.get("/api/youtube/logs")
-def downloadLogs():
-    try:
-        logs = getLogs()
-        logsFilePath = "downloads/logs.txt"
-        with open(logsFilePath, "w", encoding="utf-8") as temp:
-            for row in logs:
-                temp.write(f"{row}\n")
-        return FileResponse(
-            path=logsFilePath, filename="logs.txt", media_type="text/plain"
-        )
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-
-@app.get("/api/youtube/stats")
-def downloadStats():
-    try:
-        stats = getStats()
-        return {
-            "status": "success",
-            "total_conversions": stats[1],
-            "number_of_mp3": stats[2],
-            "number_of_mp4": stats[3],
-        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -392,6 +363,68 @@ async def deleteTiktokContent(request: tiktokDownloadRequest):
             return {"status": "deleted"}
         else:
             return {"status": "error", "message": "File not found"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# -------------------------------------------------------------------------------------------#
+#                                       Logs & stats                                         #
+# -------------------------------------------------------------------------------------------#
+
+
+class statsRequest(BaseModel):
+    table: str
+
+
+@app.post("/api/logs")
+def downloadLogs(payload: statsRequest):
+
+    if payload.table == "youtube":
+        type = "youtube"
+    elif payload.table == "instagram":
+        type = "instagram"
+    else:
+        type = "tiktok"
+
+    try:
+        logs = getLogs(table=type)
+        logsFilePath = f"downloads_{type}/{type}_logs.txt"
+        with open(logsFilePath, "w", encoding="utf-8") as temp:
+            for row in logs:
+                temp.write(f"{row}\n")
+        return FileResponse(
+            path=logsFilePath, filename="logs.txt", media_type="text/plain"
+        )
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/stats")
+def downloadStats(payload: statsRequest):
+
+    try:
+        if payload.table == "youtube":
+            stats = getStats(table="youtube")
+            return {
+                "status": "success",
+                "total_conversions": stats[1],
+                "number_of_mp3": stats[2],
+                "number_of_mp4": stats[3],
+            }
+        elif payload.table == "instagram":
+            stats = getStats(table="instagram")
+            return {
+                "status": "success",
+                "total_conversions": stats[1],
+                "number_of_video": stats[2],
+                "number_of_picture": stats[3],
+            }
+        elif payload.table == "tiktok":
+            stats = getStats(table="tiktok")
+            return {"status": "success", "total_conversions": stats[1]}
+        else:
+            return {"status": "error", "message": "unknown table"}
+
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
