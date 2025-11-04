@@ -366,7 +366,7 @@ async def convertTiktokContent(payload: tiktokConvertRequest):
         return {"status": "error", "message": str(e)}
 
 
-@app.get("/api/tiktok/download")
+@app.post("/api/tiktok/download")
 def downloadkTikTokContent(request: tiktokDownloadRequest):
     filePath = os.path.join(downloadDirTikTok, request.filename)
 
