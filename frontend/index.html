@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Youtube Converter</title>
+    <title>Media Converter</title>
     <link rel="stylesheet" href="bootstrap.min.css" />
     <link rel="stylesheet" href="style.css" />
     <link
@@ -13,80 +13,33 @@
   </head>
 
   <body>
-    <div class="topBar">
-      <ul class="nav nav-underline">
-        <li class="nav-item">
-          <a class="nav-link" href="index.html">Youtube</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="instagram_converter.html">Instagram</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="tiktok_converter.html">TikTok</a>
-        </li>
-      </ul>
-    </div>
-
-    <div id="main_wrapper">
-      <h1 id="page_title">YouTube Converter</h1>
-      <div class="container">
-        <div id="convert_section" novalidate>
-          <input
-            class="form-control"
-            type="text"
-            id="yt_url"
-            placeholder="Paste YouTube link here..."
-          />
-          <select id="youtube_convert_format" class="dropDownMenu">
-            <option value="mp3">MP3</option>
-            <option value="mp4">MP4</option>
-          </select>
-          <select id="youtube_convert_resolution" class="dropDownMenu">
-            <option value="144">144p</option>
-            <option value="480">480p</option>
-            <option value="720">720p</option>
-            <option value="1080">1080p</option>
-          </select>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="youtube_submit_button"
+    <div id="login_wrapper">
+      <h2 id="login_page_title">Media Converter</h2>
+      <form class="login_form">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Username"
+          id="login_username"
+        />
+        <input
+          type="password"
+          class="form-control"
+          placeholder="Password"
+          id="login_password"
+        />
+        <button type="button" class="btn btn-secondary" id="login_button">
+          Login
+        </button>
+        <div class="register_link">
+          Don't have an account?
+          <a href="register.html" class="card-link" id="register_link"
+            >Register</a
           >
-            Convert
-          </button>
-          <button
-            class="btn btn-secondary"
-            id="youtube_download_button"
-            type="button"
-            hidden
-          >
-            Download
-          </button>
         </div>
-        <p class="text-danger" id="youtube_invalid_link">Invalid link!</p>
-      </div>
-      <div id="youtube_convert_result">Done!</div>
-
-      <div class="bottomBar">
-        <ul class="nav nav-underline">
-          <li class="nav-item">
-            <a class="nav-link" href="#" id="youtube_stats_link">Stats</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" id="youtube_logs_link">Logs</a>
-          </li>
-        </ul>
-      </div>
+      </form>
     </div>
 
-    <div id="youtube_toast_container" hidden>
-      <div class="youtube_toast_content">
-        <h5 class="text-body" id="youtube_toast_title">Toast title</h5>
-        <div class="text-secondary" id="youtube_toast_body">Toast message</div>
-      </div>
-      <i class="fa-solid fa-xmark" id="youtube_x_mark"></i>
-    </div>
-
-    <script type="text/javascript" src="script.js"></script>
+    <script src="script_login.js"></script>
   </body>
 </html>

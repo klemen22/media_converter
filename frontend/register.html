@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link rel="stylesheet" href="bootstrap.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div id="register_wrapper">
+      <h2 id="register_page_title">Register</h2>
+      <form class="register_form">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Username"
+          id="register_username"
+          required
+        />
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Email"
+          id="register_email"
+        />
+        <input
+          type="password"
+          class="form-control"
+          placeholder="Password"
+          id="register_password"
+          required
+        />
+
+        <input
+          type="password"
+          class="form-control"
+          placeholder="Confirm password"
+          id="register_confirm_password"
+          required
+        />
+        <div id="register_result">placeholder</div>
+        <button type="button" class="btn btn-secondary" id="register_button">
+          Register
+        </button>
+        <p class="text-danger" id="register_invalid">placeholder</p>
+      </form>
+    </div>
+
+    <script src="script_register.js"></script>
+  </body>
+</html>

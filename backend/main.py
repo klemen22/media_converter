@@ -1,12 +1,11 @@
 # TODO: Fix / change formating of api requests for youtube videos
-# TODO: Add database for instagram and tiktok logs
 # TODO: creater or add seperate login function
 
 # -------------------------------------------------------------------------------------------#
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
@@ -23,10 +22,11 @@ from database import (
     getStats,
     saveInstaConversion,
     saveTiktokConversion,
+    getUsers,
+    registerNewUser,
 )
 import instaloader
 import shutil
-import asyncio
 
 initializeDB()
 app = FastAPI()
@@ -397,8 +397,10 @@ def downloadLogs(payload: statsRequest):
         type = "youtube"
     elif payload.table == "instagram":
         type = "instagram"
-    else:
+    elif payload.table == "tiktok":
         type = "tiktok"
+    else:
+        return {"status": "error", "message": "unknown table"}
 
     try:
         logs = getLogs(table=type)
@@ -415,29 +417,68 @@ def downloadLogs(payload: statsRequest):
 
 @app.post("/api/stats")
 def downloadStats(payload: statsRequest):
-
     try:
-        if payload.table == "youtube":
-            stats = getStats(table="youtube")
-            return {
-                "status": "success",
-                "total_conversions": stats[1],
-                "number_of_mp3": stats[2],
-                "number_of_mp4": stats[3],
-            }
-        elif payload.table == "instagram":
-            stats = getStats(table="instagram")
-            return {
-                "status": "success",
-                "total_conversions": stats[1],
-                "number_of_video": stats[2],
-                "number_of_picture": stats[3],
-            }
-        elif payload.table == "tiktok":
-            stats = getStats(table="tiktok")
-            return {"status": "success", "total_conversions": stats[1]}
-        else:
+        stats = getStats(platform=payload.table)
+
+        if stats is None:
             return {"status": "error", "message": "unknown table"}
+
+        (
+            _,
+            title,
+            total_conversions,
+            number_of_mp3,
+            number_of_mp4,
+            number_of_video,
+            number_of_picture,
+        ) = stats
+
+        if title == "youtube":
+            return {
+                "status": "success",
+                "total_conversions": total_conversions,
+                "number_of_mp3": number_of_mp3,
+                "number_of_mp4": number_of_mp4,
+            }
+        elif title == "instagram":
+            return {
+                "status": "success",
+                "total_conversions": total_conversions,
+                "number_of_video": number_of_video,
+                "number_of_picture": number_of_picture,
+            }
+        elif title == "tiktok":
+            return {
+                "status": "success",
+                "total_conversions": total_conversions,
+            }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+# -------------------------------------------------------------------------------------------#
+#                                     Login & register                                       #
+# -------------------------------------------------------------------------------------------#
+
+
+class registerUserRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class loginUserRequest(BaseModel):
+    username: str
+    password: str
+
+
+@app.post("/api/register")
+def registerUser(payload: registerUserRequest):
+    try:
+        # tbh try to make a query with newly registered user to see if it exists already instead of comparing new user to everyone else
+        # do the big brain
+        print("place holder broski boomshakalaka")
 
     except Exception as e:
         return {"status": "error", "message": str(e)}

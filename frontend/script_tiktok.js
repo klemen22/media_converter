@@ -2,7 +2,7 @@
 //                                  DOM Elements                                     //
 //-----------------------------------------------------------------------------------//
 
-//const logsLink = document.getElementById("instagram_logs_link");
+const logsLink = document.getElementById("tiktok_logs_link");
 const statsLink = document.getElementById("tiktok_stats_link");
 const toastContainer = document.getElementById("tiktok_toast_container");
 const toastTitle = document.getElementById("tiktok_toast_title");
@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   submitButton.disabled = false;
   downloadButton.disabled = false;
   results.hidden = true;
-  //logsLink.disabled = false;
+  logsLink.disabled = false;
   toastContainer.classList.remove("slide-in");
   toastContainer.classList.remove("fade-out");
 
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     invalidLinkFeedback.hidden = true;
   }
 
-  //logsLink.addEventListener("click", downloadLogs);
+  logsLink.addEventListener("click", downloadLogs);
   statsLink.addEventListener("click", (e) => {
     e.preventDefault();
     showStatsToast();
@@ -178,15 +178,20 @@ async function downloadRequest(data) {
 //-----------------------------------------------------------------------------------//
 
 async function downloadLogs() {
-  /* DATABASE NOT IMPLEMENTED YET
   logsLink.disabled = true;
-  const resposne = await fetch(`${baseURL}/api/tiktok/logs`);
+  const resposne = await fetch(`${baseURL}/api/logs`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ table: "tiktok" }),
+  });
   const blob = await resposne.blob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
 
   a.href = url;
-  a.download = "logs.txt";
+  a.download = "tiktok_logs.txt";
   a.style.display = "none";
   document.body.appendChild(a);
   a.click();
@@ -198,10 +203,9 @@ async function downloadLogs() {
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ filename: "logs.txt" }),
+    body: JSON.stringify({ filename: "tiktok_logs.txt" }),
   });
   logsLink.disabled = false;
-  */
 }
 
 //-----------------------------------------------------------------------------------//
@@ -209,18 +213,19 @@ async function downloadLogs() {
 //-----------------------------------------------------------------------------------//
 
 async function showStatsToast() {
-  /* DATABASE NOT IMPLEMENTED YET
   try {
-    const response = await fetch(`${baseURL}/api/tiktok/stats`);
+    const response = await fetch(`${baseURL}/api/stats`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table: "tiktok" }),
+    });
     if (response.ok == false) {
       throw new Error("Error while fetching server stats!");
     }
     const stats = await response.json();
     toastTitle.textContent = "Page stats";
     toastBody.innerHTML = `
-      Total conversions: ${stats.total_conversions}
-      &nbsp;&nbsp;&nbsp;&nbsp;MP3: ${stats.number_of_mp3}
-      &nbsp;&nbsp;&nbsp;&nbsp;MP4: ${stats.number_of_mp4}`;
+      Total conversions: ${stats.total_conversions}`;
     showToast();
     setTimeout(() => {
       hideToast();
@@ -234,7 +239,6 @@ async function showStatsToast() {
       hideToast();
     }, 5000);
   }
-  */
 }
 
 function showToast() {

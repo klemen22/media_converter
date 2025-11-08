@@ -24,22 +24,6 @@ def initializeDB():
         """
     )
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS yt_stats (
-            id INTEGER PRIMARY KEY,
-            total_conversions INTEGER,
-            number_of_mp3 INTEGER,
-            number_of_mp4 INTEGER
-        )
-        """
-    )
-
-    # initialize table
-    cursor.execute("SELECT COUNT(*) FROM yt_stats")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO yt_stats VALUES (1, 0, 0, 0)")
-
     # --------------------------Instagram------------------------- #
     cursor.execute(
         """
@@ -52,22 +36,6 @@ def initializeDB():
         """
     )
 
-    cursor.execute(
-        """
-        CREATE TABLE IF NOT EXISTS insta_stats (
-            id INTEGER PRIMARY KEY,
-            total_conversions INTEGER,
-            number_of_video INTEGER,
-            number_of_picture INTEGER
-        )
-        """
-    )
-
-    # initialize table
-    cursor.execute("SELECT COUNT(*) FROM insta_stats")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO insta_stats VALUES (1, 0, 0, 0)")
-
     # ---------------------------TikTok-------------------------- #
     cursor.execute(
         """
@@ -79,19 +47,55 @@ def initializeDB():
         """
     )
 
+    # -------------------------Stats---------------------------#
+
     cursor.execute(
         """
-        CREATE TABLE IF NOT EXISTS tiktok_stats (
-            id INTEGER PRIMARY KEY,
-            total_conversions INTEGER
+        CREATE TABLE IF NOT EXISTS stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT UNIQUE,
+            total_conversions INTEGER DEFAULT 0,
+            number_of_mp3 INTEGER DEFAULT 0,
+            number_of_mp4 INTEGER DEFAULT 0,
+            number_of_video INTEGER DEFAULT 0,
+            number_of_picture INTEGER DEFAULT 0
         )
         """
     )
 
-    # initialize table
-    cursor.execute("SELECT COUNT(*) FROM tiktok_stats")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO tiktok_stats VALUES (1, 0)")
+    rowNames = ["youtube", "instagram", "tiktok"]
+
+    for row in rowNames:
+        cursor.execute("SELECT id FROM stats WHERE title = ?", (row,))
+
+        if cursor.fetchone() is None:
+            cursor.execute(
+                "INSERT OR IGNORE INTO stats (title, total_conversions, number_of_mp3, number_of_mp4, number_of_video, number_of_picture) VALUES (?, 0, 0, 0, 0, 0)",
+                (row,),
+            )
+    # ------------------------Users---------------------------#
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS new_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            email TEXT,
+            password TEXT,
+            timestamp TEXT
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS approved_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            email TEXT,
+            password TEXT
+        )
+        """
+    )
 
     connect.commit()
     connect.close()
@@ -105,26 +109,23 @@ def initializeDB():
 def saveConversion(title, format):
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
-
     timeStamp = datetime.now().strftime("%d. %B %Y %H:%M:%S")
 
+    # Shrani v log tabelo
     cursor.execute(
         "INSERT INTO yt_logs (video_title, format, timestamp) VALUES (?, ?, ?)",
         (title, format, timeStamp),
     )
 
+    # Posodobi stats tabelo
     if format == "mp3":
         cursor.execute(
-            "UPDATE yt_stats SET number_of_mp3 = number_of_mp3 + 1 WHERE id = 1"
+            "UPDATE stats SET number_of_mp3 = number_of_mp3 + 1, total_conversions = total_conversions + 1 WHERE title = 'youtube'"
         )
     else:
         cursor.execute(
-            "UPDATE yt_stats SET number_of_mp4 = number_of_mp4 + 1 WHERE id = 1"
+            "UPDATE stats SET number_of_mp4 = number_of_mp4 + 1, total_conversions = total_conversions + 1 WHERE title = 'youtube'"
         )
-
-    cursor.execute(
-        "UPDATE yt_stats SET total_conversions = total_conversions + 1 WHERE id = 1"
-    )
 
     connect.commit()
     connect.close()
@@ -138,26 +139,23 @@ def saveConversion(title, format):
 def saveInstaConversion(title, type):
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
-
     timeStamp = datetime.now().strftime("%d. %B %Y %H:%M:%S")
 
+    # Shrani v log tabelo
     cursor.execute(
         "INSERT INTO insta_logs (content_title, type, timestamp) VALUES (?, ?, ?)",
         (title, type, timeStamp),
     )
 
+    # Posodobi stats tabelo
     if type == "video":
         cursor.execute(
-            "UPDATE insta_stats SET number_of_video = number_of_video + 1 WHERE id = 1"
+            "UPDATE stats SET number_of_video = number_of_video + 1, total_conversions = total_conversions + 1 WHERE title = 'instagram'"
         )
     else:
         cursor.execute(
-            "UPDATE insta_stats SET number_of_picture = number_of_picture + 1 WHERE id = 1"
+            "UPDATE stats SET number_of_picture = number_of_picture + 1, total_conversions = total_conversions + 1 WHERE title = 'instagram'"
         )
-
-    cursor.execute(
-        "UPDATE insta_stats SET total_conversions = total_conversions + 1 WHERE id = 1"
-    )
 
     connect.commit()
     connect.close()
@@ -171,20 +169,88 @@ def saveInstaConversion(title, type):
 def saveTiktokConversion(title):
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
-
     timeStamp = datetime.now().strftime("%d. %B %Y %H:%M:%S")
 
+    # Shrani v log tabelo
     cursor.execute(
         "INSERT INTO tiktok_logs (content_title, timestamp) VALUES (?, ?)",
         (title, timeStamp),
     )
 
+    # Posodobi stats tabelo
     cursor.execute(
-        "UPDATE tiktok_stats SET total_conversions = total_conversions + 1 WHERE id = 1"
+        "UPDATE stats SET total_conversions = total_conversions + 1 WHERE title = 'tiktok'"
     )
 
     connect.commit()
     connect.close()
+
+
+# -------------------------------------------------------------------------------------------#
+#                                           Users                                            #
+# -------------------------------------------------------------------------------------------#
+
+
+def registerNewUser(username, email, password, table):
+    connect = sqlite3.connect(DB_PATH)
+    cursor = connect.cursor()
+    timeStamp = datetime.now().strftime("%d. %B %Y %H:%M:%S")
+
+    if table == "new_users":
+        cursor.execute(
+            "INSERT INTO new_users (username, email, password, timestamp) VALUES (?, ?, ?, ?)",
+            (username, email, password, timeStamp),
+        )
+    elif table == "approved_users":
+        cursor.execute(
+            "INSERT INTO approved_users (username, email, password) VALUES (?, ?, ?)",
+            (username, email, password),
+        )
+
+    connect.commit()
+    connect.close()
+
+
+def getUsers(table, id=None):
+    connect = sqlite3.connect(DB_PATH)
+    cursor = connect.cursor()
+    allowed_tables = ["new_users", "approved_users"]
+
+    if table not in allowed_tables:
+        return ValueError("Invalid table name! >:(")
+
+    if id == None:
+        cursor.execute(f"SELECT * FROM {table}")
+        users = cursor.fetchall()
+    else:
+        cursor.execute(f"SELECT * FROM {table} WHERE id = ?", (id,))
+        users = cursor.fetchone()
+
+    connect.close()
+    return users
+
+
+def deleteUser(id, table):
+    connect = sqlite3.connect(DB_PATH)
+    cursor = connect.cursor()
+    allowed_tables = ["new_users", "approved_users"]
+
+    if table not in allowed_tables:
+        return ValueError("Invalid table name! >:(")
+
+    cursor.execute(f"SELECT * FROM {table} WHERE id = ?", (id,))
+    selectedUser = cursor.fetchone()
+
+    if not selectedUser:
+        connect.close()
+        return False
+    else:
+        cursor.execute(f"DELETE FROM {table} WHERE id = ?", (id,))
+
+    connect.commit()
+    connect.close()
+
+    return True
 
 
 # -------------------------------------------------------------------------------------------#
@@ -208,17 +274,12 @@ def getLogs(table):
     return data
 
 
-def getStats(table):
+def getStats(platform):
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
 
-    if table == "youtube":
-        cursor.execute("SELECT * FROM yt_stats WHERE id = 1")
-    elif table == "instagram":
-        cursor.execute("SELECT * FROM insta_stats WHERE id = 1")
-    else:
-        cursor.execute("SELECT * FROM tiktok_stats WHERE id = 1")
-
+    cursor.execute("SELECT * FROM stats WHERE title = ?", (platform,))
     stats = cursor.fetchone()
     connect.close()
+
     return stats
