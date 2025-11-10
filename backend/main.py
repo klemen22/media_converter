@@ -15,6 +15,7 @@ import threading
 import time
 import hashlib
 import random
+import bcrypt
 from database import (
     initializeDB,
     saveConversion,
@@ -22,8 +23,8 @@ from database import (
     getStats,
     saveInstaConversion,
     saveTiktokConversion,
-    getUsers,
     registerNewUser,
+    searchUser,
 )
 import instaloader
 import shutil
@@ -476,9 +477,21 @@ class loginUserRequest(BaseModel):
 @app.post("/api/register")
 def registerUser(payload: registerUserRequest):
     try:
-        # tbh try to make a query with newly registered user to see if it exists already instead of comparing new user to everyone else
-        # do the big brain
-        print("place holder broski boomshakalaka")
+        userExists = searchUser(username=payload.username, email=payload.email)
+
+        if userExists:
+            return {"status": "error", "message": "User already exists."}
+        else:
+            hashedPassword = hashPassword(password=payload.password)
+            print(f"Hashed password: {hashedPassword}")  # debug
+
+            registerNewUser(
+                username=payload.username,
+                email=payload.email,
+                password=hashedPassword,
+                table="new_users",
+            )
+            return {"status": "success", "message": "Registration successful."}
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -529,3 +542,9 @@ threading.Thread(target=deleteGarbage, daemon=True).start()
 def generateHash():
     uniqueHash = hashlib.sha1(str(random.random()).encode()).hexdigest()[:8]
     return uniqueHash
+
+
+def hashPassword(password):
+    passwordBytes = password.encode("utf-8")
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password=passwordBytes, salt=salt)

@@ -13,9 +13,9 @@ const registerResult = document.getElementById("register_result");
 const registerInvalid = document.getElementById("register_invalid");
 
 document.addEventListener("DOMContentLoaded", () => {
+  registerResult.hidden = true;
+  registerInvalid.hidden = true;
   registerButton.addEventListener("click", async () => {
-    registerResult.hidden = true;
-    registerInvalid.hidden = true;
     const username = registerUsername.value.trim();
     const password = registerPassword.value.trim();
     const confirmPassword = registerConfirmPassword.value.trim();
@@ -25,14 +25,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // test email formatting
     if (!emailPattern.test(email)) {
       registerInvalid.hidden = false;
-      registerInvalid.value = "Invalid email format!";
+      registerInvalid.innerHTML = "Invalid email!";
       return;
     }
 
     //check passwords
     if (password != confirmPassword) {
       registerInvalid.hidden = false;
-      registerInvalid.value = "Passwords are not matching!";
+      registerInvalid.innerHTML = "Passwords are not matching!";
       return;
     }
 
@@ -58,17 +58,17 @@ async function sendPayload(username, email, password) {
 
     if (response.ok) {
       registerResult.hidden = false;
-      registerResult.value = "Registration submitted for approval.";
+      registerResult.innerHTML = "Registration submitted for approval.";
       setTimeout(() => {
         window.location.href = "index.html";
       }, 5000);
     } else {
       registerResult.hidden = false;
-      registerResult.value = "Registration failed.";
+      registerResult.innerHTML = "Registration failed.";
     }
   } catch (error) {
     console.error("Error:", error);
     registerResult.hidden = false;
-    registerResult.value = error;
+    registerResult.innerHTML = str(error);
   }
 }

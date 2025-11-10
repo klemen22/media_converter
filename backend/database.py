@@ -230,6 +230,29 @@ def getUsers(table, id=None):
     return users
 
 
+def searchUser(username, email):
+    connect = sqlite3.connect(DB_PATH)
+    cursor = connect.cursor()
+
+    cursor.execute(
+        "SELECT * FROM approved_users WHERE username = ? OR email = ?",
+        (username, email),
+    )
+    approvedUsers = cursor.fetchone()
+
+    cursor.execute(
+        "SELECT * FROM new_users WHERE username = ? OR email = ?", (username, email)
+    )
+    newUsers = cursor.execute()
+
+    if approvedUsers or newUsers:
+        connect.close()
+        return True
+    else:
+        connect.close()
+        return False
+
+
 def deleteUser(id, table):
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
