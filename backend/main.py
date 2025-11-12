@@ -477,12 +477,16 @@ class loginUserRequest(BaseModel):
 @app.post("/api/register")
 def registerUser(payload: registerUserRequest):
     try:
+        print(f"recieved payload: {payload}")
         userExists = searchUser(username=payload.username, email=payload.email)
+        print(f"user exists: {userExists} ")
 
         if userExists:
+            print("User already exists!")
             return {"status": "error", "message": "User already exists."}
         else:
-            hashedPassword = hashPassword(password=payload.password)
+            # hashedPassword = hashPassword(password=payload.password)
+            hashedPassword = payload.password  # for debugging
             print(f"Hashed password: {hashedPassword}")  # debug
 
             registerNewUser(
@@ -491,6 +495,7 @@ def registerUser(payload: registerUserRequest):
                 password=hashedPassword,
                 table="new_users",
             )
+            print("new user registered")
             return {"status": "success", "message": "Registration successful."}
 
     except Exception as e:
@@ -544,7 +549,8 @@ def generateHash():
     return uniqueHash
 
 
-def hashPassword(password):
+def hashPassword(password: str) -> str:
     passwordBytes = password.encode("utf-8")
     salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password=passwordBytes, salt=salt)
+    hashed = bcrypt.hashpw(passwordBytes, salt)
+    return hashed.decode("utf-8")

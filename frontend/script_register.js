@@ -11,6 +11,7 @@ const registerConfirmPassword = document.getElementById(
 const registerButton = document.getElementById("register_button");
 const registerResult = document.getElementById("register_result");
 const registerInvalid = document.getElementById("register_invalid");
+const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
 
 document.addEventListener("DOMContentLoaded", () => {
   registerResult.hidden = true;
@@ -22,21 +23,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const email = registerEmail.value.trim();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // test email formatting
-    if (!emailPattern.test(email)) {
+    if (username == "") {
+      registerInvalid.hidden = false;
+      registerInvalid.innerHTML = "Username is empty!";
+      return;
+    } else if (password == "") {
+      registerInvalid.hidden = false;
+      registerInvalid.innerHTML = "Password field is empty!";
+      return;
+    } else if (!emailPattern.test(email)) {
       registerInvalid.hidden = false;
       registerInvalid.innerHTML = "Invalid email!";
       return;
-    }
-
-    //check passwords
-    if (password != confirmPassword) {
+    } else if (password != confirmPassword) {
       registerInvalid.hidden = false;
       registerInvalid.innerHTML = "Passwords are not matching!";
       return;
     }
 
-    sendPayload(username, password, email);
+    registerInvalid.hidden = true;
+    sendPayload(username, email, password);
   });
 });
 
@@ -46,7 +52,7 @@ async function sendPayload(username, email, password) {
     email: email,
     password: password,
   };
-
+  console.log("Payload: ", payload);
   try {
     const response = await fetch(`${baseURL}/api/register`, {
       method: "POST",
@@ -64,7 +70,7 @@ async function sendPayload(username, email, password) {
       }, 5000);
     } else {
       registerResult.hidden = false;
-      registerResult.innerHTML = "Registration failed.";
+      registerResult.innerHTML = data.message;
     }
   } catch (error) {
     console.error("Error:", error);

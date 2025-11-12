@@ -238,18 +238,19 @@ def searchUser(username, email):
         "SELECT * FROM approved_users WHERE username = ? OR email = ?",
         (username, email),
     )
-    approvedUsers = cursor.fetchone()
+    approvedUser = cursor.fetchone()
 
     cursor.execute(
-        "SELECT * FROM new_users WHERE username = ? OR email = ?", (username, email)
+        "SELECT * FROM new_users WHERE username = ? OR email = ?",
+        (username, email),
     )
-    newUsers = cursor.execute()
+    newUser = cursor.fetchone()
 
-    if approvedUsers or newUsers:
-        connect.close()
+    connect.close()
+
+    if approvedUser or newUser:
         return True
     else:
-        connect.close()
         return False
 
 
