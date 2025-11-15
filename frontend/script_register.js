@@ -11,11 +11,12 @@ const registerConfirmPassword = document.getElementById(
 const registerButton = document.getElementById("register_button");
 const registerResult = document.getElementById("register_result");
 const registerInvalid = document.getElementById("register_invalid");
-const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const baseURL = `${window.location.protocol}//${window.location.hostname}:9999`;
 
 document.addEventListener("DOMContentLoaded", () => {
   registerResult.hidden = true;
   registerInvalid.hidden = true;
+  registerButton.disabled = false;
   registerButton.addEventListener("click", async () => {
     const username = registerUsername.value.trim();
     const password = registerPassword.value.trim();
@@ -64,6 +65,7 @@ async function sendPayload(username, email, password) {
 
     if (response.ok) {
       registerResult.hidden = false;
+      registerButton.disabled = true;
       registerResult.innerHTML = "Registration submitted for approval.";
       setTimeout(() => {
         window.location.href = "index.html";
@@ -75,6 +77,6 @@ async function sendPayload(username, email, password) {
   } catch (error) {
     console.error("Error:", error);
     registerResult.hidden = false;
-    registerResult.innerHTML = str(error);
+    registerResult.innerHTML = error.toString();
   }
 }

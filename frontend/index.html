@@ -21,16 +21,19 @@
           class="form-control"
           placeholder="Username"
           id="login_username"
+          required
         />
         <input
           type="password"
           class="form-control"
           placeholder="Password"
           id="login_password"
+          required
         />
         <button type="button" class="btn btn-secondary" id="login_button">
           Login
         </button>
+        <p class="text-danger" id="login_invalid">placeholder</p>
         <div class="register_link">
           Don't have an account?
           <a href="register.html" class="card-link" id="register_link"

@@ -211,22 +211,25 @@ def registerNewUser(username, email, password, table):
     connect.close()
 
 
-def getUsers(table, id=None):
+def getUsers(table, id=None, username=None):
+    allowed_tables = ["new_users", "approved_users"]
+    if table not in allowed_tables:
+        raise ValueError("Invalid table name! >:(")
+
     connect = sqlite3.connect(DB_PATH)
     cursor = connect.cursor()
-    allowed_tables = ["new_users", "approved_users"]
-
-    if table not in allowed_tables:
-        return ValueError("Invalid table name! >:(")
-
-    if id == None:
-        cursor.execute(f"SELECT * FROM {table}")
-        users = cursor.fetchall()
-    else:
-        cursor.execute(f"SELECT * FROM {table} WHERE id = ?", (id,))
-        users = cursor.fetchone()
-
-    connect.close()
+    try:
+        if id is None and username is None:
+            cursor.execute(f"SELECT * FROM {table}")
+            users = cursor.fetchall()
+        elif id is None:
+            cursor.execute(f"SELECT * FROM {table} WHERE username = ?", (username,))
+            users = cursor.fetchone()
+        else:
+            cursor.execute(f"SELECT * FROM {table} WHERE id = ?", (id,))
+            users = cursor.fetchone()
+    finally:
+        connect.close()
     return users
 
 

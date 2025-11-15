@@ -29,8 +29,8 @@ if __name__ == "__main__":
 
             users = getUsers(table="new_users")
             if not users:
-                print("No new users found.")
-                break
+                print("\nNo new users found.")
+                continue
 
             for user in users:
                 print(
@@ -47,11 +47,11 @@ if __name__ == "__main__":
                 )
 
             if selectedUser.lower() == "exit":
-                print("\nEnding...")
-                break
+                # print("\nEnding...")
+                continue
             elif not selectedUser.isdigit():
                 print("\nInvalid ID!")
-                break
+                continue
             elif selectedActions == 1:
                 userID = int(selectedUser)
                 deleteUser(id=userID, table="new_users")
@@ -63,8 +63,8 @@ if __name__ == "__main__":
 
             users = getUsers(table="approved_users")
             if not users:
-                print("No users found.")
-                break
+                print("\nNo users found.")
+                continue
 
             for user in users:
                 print(
@@ -75,11 +75,11 @@ if __name__ == "__main__":
             )
 
             if selectedUser.lower() == "exit":
-                print("Ending...")
-                break
+                # print("\nEnding...")
+                continue
             elif not selectedUser.isdigit():
-                print("Invalid ID!")
-                break
+                print("\nInvalid ID!")
+                continue
             else:
                 userID = int(selectedUser)
                 deleteUser(id=userID, table="approved_users")
@@ -88,5 +88,5 @@ if __name__ == "__main__":
             print("\nEnding...")
             break
         else:
-            print("Invalid actions ID.")
-            break
+            print("\nInvalid actions ID.")
+            continue

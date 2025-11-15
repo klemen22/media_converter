@@ -15,11 +15,13 @@ const submitButton = document.getElementById("youtube_submit_button");
 const downloadButton = document.getElementById("youtube_download_button");
 const ytURL = document.getElementById("yt_url");
 const invalidLinkFeedback = document.getElementById("youtube_invalid_link");
-const baseURL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const baseURL = `${window.location.protocol}//${window.location.hostname}:9999`;
 let downloadUrl = null;
 let filename = null;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await validateToken();
+
   formatSelect.value = "mp3";
   resolutionSelect.hidden = true;
   invalidLinkFeedback.hidden = true;
@@ -292,4 +294,37 @@ function hideToast() {
     },
     { once: true }
   );
+}
+
+//-----------------------------------------------------------------------------------//
+//                                   Token Validation                                //
+//-----------------------------------------------------------------------------------//
+
+async function validateToken() {
+  const token = localStorage.getItem("access_token");
+
+  // if token is not present return to index.html
+  if (!token) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  // if token is present validate the token
+  try {
+    const response = await fetch(`${baseURL}/api/user_info`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    data = await response.json();
+
+    if (data.status != "success") {
+      localStorage.removeItem("access_token");
+      window.location.href = "index.html";
+    }
+  } catch (error) {
+    console.log("Error: ", error);
+    window.location.href = "index.html";
+  }
 }

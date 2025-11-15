@@ -5,7 +5,7 @@
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
@@ -25,16 +25,19 @@ from database import (
     saveTiktokConversion,
     registerNewUser,
     searchUser,
+    getUsers,
 )
 import instaloader
 import shutil
+from authenticatoion.login_token_manager import createToken, getTokenUser
 
 initializeDB()
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # spicy setting
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -486,7 +489,7 @@ def registerUser(payload: registerUserRequest):
             return {"status": "error", "message": "User already exists."}
         else:
             # hashedPassword = hashPassword(password=payload.password)
-            hashedPassword = payload.password  # for debugging
+            hashedPassword = hashPassword(payload.password)  # for debugging
             print(f"Hashed password: {hashedPassword}")  # debug
 
             registerNewUser(
@@ -500,6 +503,45 @@ def registerUser(payload: registerUserRequest):
 
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/login")
+def loginUser(payload: loginUserRequest):
+
+    try:
+        registeredUser = getUsers(table="approved_users", username=payload.username)
+        print(f"Retrieved user:\n{registeredUser}")
+
+        if not registeredUser:
+            print("User doesnt't exist.")
+            return {"status": "error", "message": "User doens't exist!"}
+        else:
+            # if user exists compare passwords
+            (_, _, _, registeredPassword) = registeredUser
+
+            if checkPassword(
+                loginPassword=payload.password, storedPassword=registeredPassword
+            ):
+                token = createToken({"sub": payload.username})
+                return {
+                    "status": "success",
+                    "message": "Login successful!",
+                    "access_token": token,
+                    "token_type": "bearer",
+                }
+            else:
+                return {
+                    "status": "invalid",
+                    "message": "Username or password is incorrect!",
+                }
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/user_info")  # validating token
+def getUserInfo(currentUser: str = Depends(getTokenUser)):
+    return {"status": "success", "user": currentUser}
 
 
 # -------------------------------------------------------------------------------------------#
@@ -554,3 +596,11 @@ def hashPassword(password: str) -> str:
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(passwordBytes, salt)
     return hashed.decode("utf-8")
+
+
+def checkPassword(loginPassword, storedPassword):
+    loginPasswordBytes = loginPassword.encode("utf-8")
+    storedPasswordBytes = storedPassword.encode("utf-8")
+    return bcrypt.checkpw(
+        password=loginPasswordBytes, hashed_password=storedPasswordBytes
+    )
