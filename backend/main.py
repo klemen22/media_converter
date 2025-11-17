@@ -1,11 +1,11 @@
-# TODO: Fix / change formating of api requests for youtube videos
-# TODO: creater or add seperate login function
+# I <3 REST API
 
 # -------------------------------------------------------------------------------------------#
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
@@ -124,14 +124,19 @@ async def convertVideo(payload: youtubeConvert):
                 filename = filename.rsplit(".", 1)[0] + ".mp3"
             cleanName = os.path.basename(filename)
             saveConversion(cleanName, payload.format)
-        return {
-            "status": "success",
-            "message": "Download complete",
-            "filename": cleanName,
-        }
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "message": "Download complete",
+                "filename": cleanName,
+            },
+        )
     except Exception as e:
         print("Error while downloading: ", e)
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.post("/api/youtube/download")
@@ -140,11 +145,14 @@ def downloadFile(payload: youtubeContentRequest):
     if os.path.exists(filePath):
         return FileResponse(
             path=filePath,
+            status_code=200,
             filename=payload.filename,
             media_type="application/octet-stream",
         )
     else:
-        return {"status": "error", "message": "File not found"}
+        return JSONResponse(
+            status_code=404, content={"status": "error", "message": "File not found!"}
+        )
 
 
 @app.delete("/api/youtube/delete")
@@ -153,11 +161,13 @@ async def deleteFile(payload: youtubeContentRequest):
     try:
         if os.path.exists(filePath):
             os.remove(filePath)
-            return {"status": "deleted"}
+            return JSONResponse(status_code=200, content={"status": "deleted"})
         else:
-            return {"status": "not found"}
+            return JSONResponse(status_code=404, content={"status": "not found"})
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 # -------------------------------------------------------------------------------------------#
@@ -199,7 +209,10 @@ async def convertInstagramContent(payload: InstagramRequest):
             post_metadata_txt_pattern="",
         )
     else:
-        return {"status": "error", "message": "invalid content type"}
+        return JSONResponse(
+            status_code=400,
+            content={"status": "error", "message": "invalid content type"},
+        )
 
     contentURL = payload.url
     shortCode = contentURL.split("/")[-2]
@@ -269,21 +282,28 @@ async def convertInstagramContent(payload: InstagramRequest):
             )
 
             shutil.rmtree(archivePath)
-            return {
-                "status": "success",
-                "message": "download complete",
-                "filename": archiveName,
-            }
-
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": "download complete",
+                    "filename": archiveName,
+                },
+            )
         else:
-            return {
-                "status": "success",
-                "message": "download complete",
-                "filename": fileNames[0],
-            }
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": "download complete",
+                    "filename": fileNames[0],
+                },
+            )
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.post("/api/instagram/download")
@@ -296,10 +316,15 @@ async def downloadInstagramContent(payload: InstagramFilesRequest):
             else "application/octet-stream"
         )
         return FileResponse(
-            path=filePath, filename=payload.filename, media_type=media_type
+            path=filePath,
+            status_code=200,
+            filename=payload.filename,
+            media_type=media_type,
         )
     else:
-        return {"status": "error", "message": "not found"}
+        return JSONResponse(
+            status_code=404, content={"status": "error", "message": "File not found!"}
+        )
 
 
 @app.delete("/api/instagram/delete")
@@ -308,11 +333,15 @@ async def deleteInstagramContent(payload: InstagramFilesRequest):
     try:
         if os.path.exists(filePath):
             os.remove(filePath)
-            return {"status": "deleted"}
+            return JSONResponse(status_code=200, content={"status": "deleted"})
         else:
-            return {"status": "error", "message": "not found"}
+            return JSONResponse(
+                status_code=404, content={"status": "error", "message": "not found"}
+            )
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 # -------------------------------------------------------------------------------------------#
@@ -345,14 +374,18 @@ async def convertTiktokContent(payload: tiktokConvertRequest):
             cleanName = os.path.basename(filename)
 
             saveTiktokConversion(title=cleanName)
-
-            return {
-                "status": "success",
-                "message": "Download complete",
-                "filename": cleanName,
-            }
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": "Download complete",
+                    "filename": cleanName,
+                },
+            )
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.post("/api/tiktok/download")
@@ -364,11 +397,14 @@ def downloadkTikTokContent(request: tiktokDownloadRequest):
     if os.path.exists(filePath):
         return FileResponse(
             path=filePath,
+            status_code=200,
             filename=request.filename,
             media_type="application/octet-stream",
         )
     else:
-        return {"status": "error", "message": "File not found"}
+        return JSONResponse(
+            status_code=404, content={"status": "error", "message": "File not found!"}
+        )
 
 
 @app.delete("/api/tiktok/delete")
@@ -378,11 +414,16 @@ async def deleteTiktokContent(request: tiktokDownloadRequest):
     try:
         if os.path.exists(filePath):
             os.remove(filePath)
-            return {"status": "deleted"}
+            return JSONResponse(status_code=200, content={"status": "deleted"})
         else:
-            return {"status": "error", "message": "File not found"}
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error", "message": "File not found"},
+            )
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 # -------------------------------------------------------------------------------------------#
@@ -404,7 +445,9 @@ def downloadLogs(payload: statsRequest):
     elif payload.table == "tiktok":
         type = "tiktok"
     else:
-        return {"status": "error", "message": "unknown table"}
+        return JSONResponse(
+            status_code=400, content={"status": "error", "message": "unknown table"}
+        )
 
     try:
         logs = getLogs(table=type)
@@ -413,10 +456,15 @@ def downloadLogs(payload: statsRequest):
             for row in logs:
                 temp.write(f"{row}\n")
         return FileResponse(
-            path=logsFilePath, filename="logs.txt", media_type="text/plain"
+            path=logsFilePath,
+            status_code=200,
+            filename="logs.txt",
+            media_type="text/plain",
         )
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.post("/api/stats")
@@ -425,7 +473,9 @@ def downloadStats(payload: statsRequest):
         stats = getStats(platform=payload.table)
 
         if stats is None:
-            return {"status": "error", "message": "unknown table"}
+            return JSONResponse(
+                status_code=400, content={"status": "error", "message": "unknown table"}
+            )
 
         (
             _,
@@ -438,27 +488,44 @@ def downloadStats(payload: statsRequest):
         ) = stats
 
         if title == "youtube":
-            return {
-                "status": "success",
-                "total_conversions": total_conversions,
-                "number_of_mp3": number_of_mp3,
-                "number_of_mp4": number_of_mp4,
-            }
+            return JSONResponse(
+                status_code=200,
+                content=(
+                    {
+                        "status": "success",
+                        "total_conversions": total_conversions,
+                        "number_of_mp3": number_of_mp3,
+                        "number_of_mp4": number_of_mp4,
+                    }
+                ),
+            )
         elif title == "instagram":
-            return {
-                "status": "success",
-                "total_conversions": total_conversions,
-                "number_of_video": number_of_video,
-                "number_of_picture": number_of_picture,
-            }
+            return JSONResponse(
+                status_code=200,
+                content=(
+                    {
+                        "status": "success",
+                        "total_conversions": total_conversions,
+                        "number_of_video": number_of_video,
+                        "number_of_picture": number_of_picture,
+                    }
+                ),
+            )
         elif title == "tiktok":
-            return {
-                "status": "success",
-                "total_conversions": total_conversions,
-            }
+            return JSONResponse(
+                status_code=200,
+                content=(
+                    {
+                        "status": "success",
+                        "total_conversions": total_conversions,
+                    }
+                ),
+            )
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content=({"status": "error", "message": str(e)})
+        )
 
 
 # -------------------------------------------------------------------------------------------#
@@ -486,7 +553,10 @@ def registerUser(payload: registerUserRequest):
 
         if userExists:
             print("User already exists!")
-            return {"status": "error", "message": "User already exists."}
+            return JSONResponse(
+                status_code=409,
+                content={"status": "error", "message": "User already exists."},
+            )
         else:
             # hashedPassword = hashPassword(password=payload.password)
             hashedPassword = hashPassword(payload.password)  # for debugging
@@ -498,11 +568,15 @@ def registerUser(payload: registerUserRequest):
                 password=hashedPassword,
                 table="new_users",
             )
-            print("new user registered")
-            return {"status": "success", "message": "Registration successful."}
+            return JSONResponse(
+                status_code=201,
+                content={"status": "success", "message": "Registration successful."},
+            )
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.post("/api/login")
@@ -513,8 +587,10 @@ def loginUser(payload: loginUserRequest):
         print(f"Retrieved user:\n{registeredUser}")
 
         if not registeredUser:
-            print("User doesnt't exist.")
-            return {"status": "error", "message": "User doens't exist!"}
+            return JSONResponse(
+                status_code=404,
+                content={"status": "error", "message": "User not found!"},
+            )
         else:
             # if user exists compare passwords
             (_, _, _, registeredPassword) = registeredUser
@@ -523,25 +599,35 @@ def loginUser(payload: loginUserRequest):
                 loginPassword=payload.password, storedPassword=registeredPassword
             ):
                 token = createToken({"sub": payload.username})
-                return {
-                    "status": "success",
-                    "message": "Login successful!",
-                    "access_token": token,
-                    "token_type": "bearer",
-                }
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "status": "success",
+                        "message": "Login successful!",
+                        "access_token": token,
+                        "token_type": "bearer",
+                    },
+                )
             else:
-                return {
-                    "status": "invalid",
-                    "message": "Username or password is incorrect!",
-                }
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "status": "invalid",
+                        "message": "Username or password is incorrect!",
+                    },
+                )
 
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return JSONResponse(
+            status_code=500, content={"status": "error", "message": str(e)}
+        )
 
 
 @app.get("/api/user_info")  # validating token
 def getUserInfo(currentUser: str = Depends(getTokenUser)):
-    return {"status": "success", "user": currentUser}
+    return JSONResponse(
+        status_code=200, content={"status": "success", "user": currentUser}
+    )
 
 
 # -------------------------------------------------------------------------------------------#
