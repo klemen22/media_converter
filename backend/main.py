@@ -4,7 +4,7 @@
 #                                         Imports                                            #
 # -------------------------------------------------------------------------------------------#
 
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +29,11 @@ from database import (
 )
 import instaloader
 import shutil
-from authenticatoion.login_token_manager import createToken, getTokenUser
+from authenticatoion.login_token_manager import (
+    createToken,
+    checkTokenUser,
+    getUserFromToken,
+)
 
 initializeDB()
 app = FastAPI()
@@ -76,7 +80,9 @@ class youtubeContentRequest(BaseModel):
 
 
 @app.post("/api/youtube/convert")
-async def convertVideo(payload: youtubeConvert):
+async def convertVideo(
+    payload: youtubeConvert, user_id: int = Depends(getUserFromToken)
+):
 
     uniqueHash = generateHash()
     ydl_opts = {}
@@ -123,7 +129,9 @@ async def convertVideo(payload: youtubeConvert):
             if payload.format == "mp3":
                 filename = filename.rsplit(".", 1)[0] + ".mp3"
             cleanName = os.path.basename(filename)
-            saveConversion(cleanName, payload.format)
+            saveConversion(
+                user_id=user_id, title=cleanName, format=payload.format, url=payload.url
+            )
         return JSONResponse(
             status_code=200,
             content={
@@ -185,7 +193,9 @@ class InstagramFilesRequest(BaseModel):
 
 
 @app.post("/api/instagram/convert")
-async def convertInstagramContent(payload: InstagramRequest):
+async def convertInstagramContent(
+    payload: InstagramRequest, user_id: int = Depends(getUserFromToken)
+):
     print("Payload:", payload)
 
     if payload.type == "video":
@@ -240,9 +250,16 @@ async def convertInstagramContent(payload: InstagramRequest):
                 )
                 fileNames.append(contentID + fileExt)
                 if fileExt == ".mp4":
-                    saveInstaConversion(title=contentID, type="video")
+                    saveInstaConversion(
+                        user_id=user_id, title=contentID, type="video", url=payload.url
+                    )
                 else:
-                    saveInstaConversion(title=contentID, type="picture")
+                    saveInstaConversion(
+                        user_id=user_id,
+                        title=contentID,
+                        type="picture",
+                        url=payload.url,
+                    )
         else:
             if payload.type == "video":
                 fileExt = ".mp4"
@@ -257,9 +274,13 @@ async def convertInstagramContent(payload: InstagramRequest):
             loader.download_pic(filename=filePath, url=fileURL, mtime=post.date_local)
             fileNames.append(contentID + fileExt)
             if fileExt == ".mp4":
-                saveInstaConversion(title=contentID, type="video")
+                saveInstaConversion(
+                    user_id=user_id, title=contentID, type="video", url=payload.url
+                )
             else:
-                saveInstaConversion(title=contentID, type="picture")
+                saveInstaConversion(
+                    user_id=user_id, title=contentID, type="picture", url=payload.url
+                )
 
         if len(fileNames) > 1:
             archiveHash = generateHash()
@@ -356,7 +377,9 @@ class tiktokDownloadRequest(BaseModel):
 
 
 @app.post("/api/tiktok/convert")
-async def convertTiktokContent(payload: tiktokConvertRequest):
+async def convertTiktokContent(
+    payload: tiktokConvertRequest, user_id: int = Depends(getUserFromToken)
+):
     filePath = os.path.join(
         downloadDirTikTok, "%(title)s_" + generateHash() + ".%(ext)s"
     )
@@ -373,7 +396,7 @@ async def convertTiktokContent(payload: tiktokConvertRequest):
             filename = ydl.prepare_filename(info)
             cleanName = os.path.basename(filename)
 
-            saveTiktokConversion(title=cleanName)
+            saveTiktokConversion(user_id=user_id, title=cleanName, url=payload.url)
             return JSONResponse(
                 status_code=200,
                 content={
@@ -436,7 +459,7 @@ class statsRequest(BaseModel):
 
 
 @app.post("/api/logs")
-def downloadLogs(payload: statsRequest):
+def downloadLogs(payload: statsRequest, user_id: int = Depends(getUserFromToken)):
 
     if payload.table == "youtube":
         type = "youtube"
@@ -450,9 +473,20 @@ def downloadLogs(payload: statsRequest):
         )
 
     try:
-        logs = getLogs(table=type)
+        user = getUsers(table="approved_users", id=user_id)
+        if user:
+            username = user["username"]
+        else:
+            username = "unknown"
+
+        logs = getLogs(table=type, user_id=user_id)
         logsFilePath = f"downloads_{type}/{type}_logs.txt"
+
         with open(logsFilePath, "w", encoding="utf-8") as temp:
+
+            temp.write(f"User: {username}\n")
+            temp.write(f"User ID: {user_id}\n\n")
+
             for row in logs:
                 temp.write(f"{row}\n")
         return FileResponse(
@@ -624,7 +658,7 @@ def loginUser(payload: loginUserRequest):
 
 
 @app.get("/api/user_info")  # validating token
-def getUserInfo(currentUser: str = Depends(getTokenUser)):
+def getUserInfo(currentUser: str = Depends(checkTokenUser)):
     return JSONResponse(
         status_code=200, content={"status": "success", "user": currentUser}
     )

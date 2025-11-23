@@ -8,7 +8,9 @@ const loginButton = document.getElementById("login_button");
 const loginInvalid = document.getElementById("login_invalid");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:9999`;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await checkToken();
+
   loginInvalid.hidden = true;
 
   loginButton.addEventListener("click", async () => {
@@ -57,5 +59,34 @@ async function sendLoginPayload(username, password) {
     console.error("Error:", error);
     loginInvalid.hidden = false;
     loginInvalid.innerHTML = str(error);
+  }
+}
+
+//-----------------------------------------------------------------------------------//
+//                                     Token Check                                   //
+//-----------------------------------------------------------------------------------//
+async function checkToken() {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${baseURL}/api/user_info`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    data = await response.json();
+
+    if (data.status != "success") {
+      localStorage.removeItem("access_token");
+    } else {
+      window.location.href = "youtube_converter.html";
+    }
+  } catch (error) {
+    console.log("Error: ", error);
   }
 }

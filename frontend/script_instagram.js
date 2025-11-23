@@ -83,6 +83,8 @@ async function submitRequest() {
     type: type,
   };
 
+  const token = localStorage.getItem("access_token");
+
   console.log(payload);
   results.hidden = false;
   results.textContent = "Converting...";
@@ -92,6 +94,7 @@ async function submitRequest() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
         Expires: "0",
@@ -188,9 +191,12 @@ async function downloadRequest(data) {
 
 async function downloadLogs() {
   logsLink.disabled = true;
+  const token = localStorage.getItem("access_token");
+
   const resposne = await fetch(`${baseURL}/api/logs`, {
     method: "POST",
     headers: {
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ table: "instagram" }),

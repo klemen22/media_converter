@@ -2,8 +2,10 @@ import os
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from fastapi import Depends
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
+from database import getUsers
 
 load_dotenv()
 
@@ -36,7 +38,7 @@ def createToken(data: dict):
 # -------------------------------------------------------------------------------------------#
 
 
-def getTokenUser(token: str = Depends(oauth2Scheme)):
+def checkTokenUser(token: str = Depends(oauth2Scheme)):
     try:
         payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
         username = payload.get("sub")
@@ -46,3 +48,24 @@ def getTokenUser(token: str = Depends(oauth2Scheme)):
 
     except JWTError:
         return {"status": "error", "message": str(JWTError)}
+
+
+# -------------------------------------------------------------------------------------------#
+#                                      Get user from token                                   #
+# -------------------------------------------------------------------------------------------#
+
+
+def getUserFromToken(currentUser: str = Depends(checkTokenUser)):
+    if isinstance(currentUser, dict) and currentUser.get("status") == "error":
+        return JSONResponse(
+            status_code=401,
+            content={"status": "error", "message": f"{currentUser.get("message")}"},
+        )
+    user = getUsers(table="approved_users", username=currentUser)
+
+    if user:
+        return user[0]
+    else:
+        return JSONResponse(
+            status_code=404, content={"status": "error", "message": "User not found!"}
+        )
