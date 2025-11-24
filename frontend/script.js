@@ -15,6 +15,7 @@ const submitButton = document.getElementById("youtube_submit_button");
 const downloadButton = document.getElementById("youtube_download_button");
 const ytURL = document.getElementById("yt_url");
 const invalidLinkFeedback = document.getElementById("youtube_invalid_link");
+const logoutBtn = document.getElementById("logoutBtn");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:9999`;
 let downloadUrl = null;
 let filename = null;
@@ -50,6 +51,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   xMark.addEventListener("click", hideToast);
+
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("access_token");
+    window.location.href = "index.html";
+  });
 
   submitButton.addEventListener("click", async (event) => {
     event.preventDefault();
