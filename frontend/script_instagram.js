@@ -15,6 +15,7 @@ const downloadButton = document.getElementById("instagram_download_button");
 const instaURL = document.getElementById("instagram_url");
 const invalidLinkFeedback = document.getElementById("instagram_invalid_link");
 const logoutBtn = document.getElementById("logoutBtn");
+const activeUser = document.getElementById("activeUser");
 const baseURL = `${window.location.protocol}//${window.location.hostname}:9999`;
 let downloadUrl = null;
 let filename = null;
@@ -312,6 +313,7 @@ async function validateToken() {
       },
     });
     data = await response.json();
+    activeUser.innerHTML = data.user;
 
     if (data.status != "success") {
       localStorage.removeItem("access_token");
