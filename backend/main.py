@@ -662,6 +662,15 @@ def getUserInfo(currentUser: str = Depends(checkTokenUser)):
     return JSONResponse(
         status_code=200, content={"status": "success", "user": currentUser}
     )
+    
+# -------------------------------------------------------------------------------------------#
+#                                    Server health check                                     #
+# -------------------------------------------------------------------------------------------#
+@app.get("/api/ping")
+def ping():
+    return JSONResponse(
+        status_code=200, content={"status" : "ok", "message" : "server is alive"}
+    )
 
 
 # -------------------------------------------------------------------------------------------#
