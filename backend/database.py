@@ -11,6 +11,8 @@ DB_PATH = "logs.db"
 def initializeDB():
     connect = createDBconnection()
     cursor = connect.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    cursor.execute("PRAGMA synchronous=NORMAL;")
 
     # ---------------------------Youtube------------------------- #
     cursor.execute(
@@ -334,8 +336,7 @@ def getStats(platform):
 
 
 def createDBconnection():
-    connect = sqlite3.connect(DB_PATH)
+    connect = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     connect.row_factory = sqlite3.Row
     connect.execute("PRAGMA foreign_keys = ON")
-
     return connect

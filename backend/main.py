@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from yt_dlp import YoutubeDL
 from fastapi.responses import FileResponse
+from fastapi.concurrency import run_in_threadpool
 import os
 import threading
 import time
@@ -104,6 +105,7 @@ async def convertVideo(
             "cachedir": False,
             "nopart": True,
             "noplaylist": True,
+            "socket_timeout": 15,
         }
 
     elif payload.format == "mp4":
@@ -118,6 +120,7 @@ async def convertVideo(
             "cachedir": False,
             "nopart": True,
             "noplaylist": True,
+            "socket_timeout": 15,
         }
 
     try:
@@ -129,9 +132,15 @@ async def convertVideo(
             if payload.format == "mp3":
                 filename = filename.rsplit(".", 1)[0] + ".mp3"
             cleanName = os.path.basename(filename)
+            """
             saveConversion(
                 user_id=user_id, title=cleanName, format=payload.format, url=payload.url
             )
+            """
+            await run_in_threadpool(
+                saveConversion, user_id, cleanName, payload.format, payload.url
+            )
+
         return JSONResponse(
             status_code=200,
             content={
@@ -250,15 +259,25 @@ async def convertInstagramContent(
                 )
                 fileNames.append(contentID + fileExt)
                 if fileExt == ".mp4":
+                    """
                     saveInstaConversion(
                         user_id=user_id, title=contentID, type="video", url=payload.url
                     )
+                    """
+                    await run_in_threadpool(
+                        saveInstaConversion, user_id, contentID, "video", payload.url
+                    )
                 else:
+                    """
                     saveInstaConversion(
                         user_id=user_id,
                         title=contentID,
                         type="picture",
                         url=payload.url,
+                    )
+                    """
+                    await run_in_threadpool(
+                        saveInstaConversion, user_id, contentID, "picture", payload.url
                     )
         else:
             if payload.type == "video":
@@ -274,12 +293,22 @@ async def convertInstagramContent(
             loader.download_pic(filename=filePath, url=fileURL, mtime=post.date_local)
             fileNames.append(contentID + fileExt)
             if fileExt == ".mp4":
+                """
                 saveInstaConversion(
                     user_id=user_id, title=contentID, type="video", url=payload.url
                 )
+                """
+                await run_in_threadpool(
+                    saveInstaConversion, user_id, contentID, "video", payload.url
+                )
             else:
+                """
                 saveInstaConversion(
                     user_id=user_id, title=contentID, type="picture", url=payload.url
+                )
+                """
+                await run_in_threadpool(
+                    saveInstaConversion, user_id, contentID, "picture", payload.url
                 )
 
         if len(fileNames) > 1:
@@ -388,6 +417,7 @@ async def convertTiktokContent(
         "outtmpl": filePath,
         "format": "mp4",
         "noplaylist": True,
+        "socket_timeout": 15,
     }
 
     try:
@@ -396,7 +426,10 @@ async def convertTiktokContent(
             filename = ydl.prepare_filename(info)
             cleanName = os.path.basename(filename)
 
-            saveTiktokConversion(user_id=user_id, title=cleanName, url=payload.url)
+            # saveTiktokConversion(user_id=user_id, title=cleanName, url=payload.url)
+            await run_in_threadpool(
+                saveTiktokConversion, user_id, cleanName, payload.url
+            )
             return JSONResponse(
                 status_code=200,
                 content={
@@ -662,14 +695,15 @@ def getUserInfo(currentUser: str = Depends(checkTokenUser)):
     return JSONResponse(
         status_code=200, content={"status": "success", "user": currentUser}
     )
-    
+
+
 # -------------------------------------------------------------------------------------------#
 #                                    Server health check                                     #
 # -------------------------------------------------------------------------------------------#
 @app.get("/api/ping")
 def ping():
     return JSONResponse(
-        status_code=200, content={"status" : "ok", "message" : "server is alive"}
+        status_code=200, content={"status": "ok", "message": "server is alive"}
     )
 
 
