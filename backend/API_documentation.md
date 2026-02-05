@@ -400,7 +400,7 @@ Allowed values:
 
 
 ## Data model
-![data_model](images\data_model.png)
+![data_model](images/data_model.png)
 
 
 
