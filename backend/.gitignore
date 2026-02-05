@@ -2,3 +2,4 @@ venv
 commands.txt
 logs.db
 .env
+nginx-1.28.0
