@@ -400,7 +400,7 @@ Allowed values:
 
 
 ## Data model
-![Kek](images\data_model.png "why no work")
+![data_model](images\data_model.png)
 
 
 
