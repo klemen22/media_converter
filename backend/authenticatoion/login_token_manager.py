@@ -40,19 +40,6 @@ def createToken(data: dict):
 # -------------------------------------------------------------------------------------------#
 
 
-# can't use JSONresponse here otherwise this happens:
-
-"""
-{
-  "status": "success",
-  "user": {
-    "status": "error",
-    "message": "<class 'jose.exceptions.JWTError'>"
-  }
-}
-"""
-
-
 def checkTokenUser(token: str = Depends(oauth2Scheme)):
     try:
         payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=[ALGORITHM])
