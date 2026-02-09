@@ -1,11 +1,15 @@
-# API documentation for Media Converter
+# Media Converter API Documentation
 
-API requests are seperated in seperate sections based on their usage.
+The Media Converter API provides endpoints for authentication and for downloading/converting media from YouTube, Instagram, and TikTok.
+
+All API endpoints are prefixed with `/api`.
 
 ## Authentication
-Several endpoints require authentication via **Bearer Token**.
 
-### Authorization header
+Some endpoints require authentication via **Bearer Token (JWT)**.
+
+### Authorization Header
+
 ```
 Authorization: Bearer <access_token>
 ```
@@ -28,6 +32,9 @@ Checks if the backend server is available.
 
 ### POST `/api/register`
 Checks if the user already exists. In case the user is new it's stored in **new_users** table.
+
+**Note**: Newly registered users are stored in the `new_users` table and require approval before they can log in.
+
 
 ### Sample request
 ``` json
@@ -69,8 +76,8 @@ Authenticates user and returns JWT.
 {
     "status": "success",
     "message": "Login successful!",
-    "access_token": jwt_token,
-    "token_type": "bearer",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer"
 }
 ```
 
@@ -78,11 +85,11 @@ Authenticates user and returns JWT.
 ```json
 {
     "status": "invalid",
-    "message": "Username or password is incorrect!",
-},
+    "message": "Username or password is incorrect!"
+}
 ```
 ### GET `/api/user_info`
-Validets user's token and returns the username.
+Validates user's token and returns the username.
 
 ### Success response
 
@@ -108,6 +115,13 @@ Downloads and converts a YouTube video to selected format.
     "resolution": "720p"
 }
 ```
+
+Allowed resolutions:
+- 144p
+- 480p
+- 720p
+- 1080p
+
 
 ### Success response
 ```json
@@ -185,6 +199,11 @@ Supports both single posts and carousel (sidecar) posts.
   "type": "video"
 }
 ```
+
+Allowed values:
+- video
+- image
+
 
 ### Success response (single file)
 ```json
@@ -382,7 +401,7 @@ Allowed values:
     "status": "success",
     "total_conversions": 120,
     "number_of_mp3": 40,
-    "number_of_mp4": 80,
+    "number_of_mp4": 80
 }
 ```
 
