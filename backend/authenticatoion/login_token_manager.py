@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 from fastapi import Depends
 from fastapi.responses import JSONResponse
@@ -20,9 +20,6 @@ oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 # -------------------------------------------------------------------------------------------#
 #                                       Create token                                         #
 # -------------------------------------------------------------------------------------------#
-
-
-from datetime import datetime, timedelta, timezone
 
 
 def createToken(data: dict):
